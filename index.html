@@ -373,13 +373,17 @@
       navigator.clipboard.writeText(txt).then(() => showToast(msg)).catch(() => showToast('Não foi possível copiar automaticamente.', 'error'));
     }
 
-    function getClientPortalFilename() {
-      return window.location.pathname.endsWith('rpmaster.html') ? './index.html' : './sistema.html';
+    function getClientPortalBaseUrl() {
+      if (window.location.hostname.includes('minhaempresacrm.github.io')) {
+        return 'https://minhaempresacrm.github.io/rpmaster/sistema.html';
+      }
+      const fname = window.location.pathname.endsWith('rpmaster.html') ? './index.html' : './sistema.html';
+      return new URL(fname, window.location.href).toString().split('?')[0];
     }
 
     function buildClientUrl(slug) {
-      const url = new URL(getClientPortalFilename(), window.location.href);
-      if (slug && slug !== 'nathalia-lisboa') {
+      const url = new URL(getClientPortalBaseUrl());
+      if (slug) {
         url.searchParams.set('escritorio', slug);
       }
       return url.toString();
@@ -790,8 +794,8 @@
       showToast('Gerando acesso administrativo auditado...', 'info');
       const res = await rpmAction('impersonate', { escritorio_id: escritorioId });
       if (!res) return;
-      const url = new URL(getClientPortalFilename(), window.location.href);
-      if (res.slug && res.slug !== 'nathalia-lisboa') url.searchParams.set('escritorio', res.slug);
+      const url = new URL(getClientPortalBaseUrl());
+      if (res.slug) url.searchParams.set('escritorio', res.slug);
       url.searchParams.set('rpm_token', res.token);
       url.searchParams.set('rpm_user', JSON.stringify(res.user));
       window.open(url.toString(), '_blank', 'noopener');
@@ -1332,7 +1336,7 @@
 
     window.addEventListener('DOMContentLoaded', () => {
       const portalLink = document.getElementById('rpm-portal-link');
-      if (portalLink) portalLink.href = getClientPortalFilename();
+      if (portalLink) portalLink.href = getClientPortalBaseUrl();
       refreshIcons();
       enterCommandCenter();
     });
