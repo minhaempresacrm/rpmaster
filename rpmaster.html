@@ -375,6 +375,25 @@
       navigator.clipboard.writeText(txt).then(() => showToast(msg)).catch(() => showToast('Não foi possível copiar automaticamente.', 'error'));
     }
 
+    function safeHex(val, fallback) {
+      return /^#[0-9A-Fa-f]{6}$/.test(String(val || '').trim()) ? String(val).trim() : fallback;
+    }
+
+    function safeHttpsUrl(val) {
+      const s = String(val || '').trim();
+      return /^https:\/\//i.test(s) ? s : '';
+    }
+
+    function copyTenantUrl(escritorioId, kind) {
+      const e = RPM.escritorios.find(x => x.id === escritorioId);
+      if (!e) return;
+      if (kind === 'site') {
+        copyText(buildSiteUrl(e.slug), 'URL do Site Vitrine copiada!');
+      } else {
+        copyText(buildClientUrl(e.slug), 'URL do Sistema copiada!');
+      }
+    }
+
     function getClientPortalBaseUrl() {
       if (window.location.hostname.includes('minhaempresacrm.github.io')) {
         return 'https://minhaempresacrm.github.io/rpmaster/sistema.html';
@@ -657,22 +676,23 @@
         const mniEnabled = ('mni_realtime' in modsMap) ? Boolean(modsMap.mni_realtime) : true;
         const modCount = getEnabledModulesCount(e);
         const areas = Array.isArray(e.areas_atuacao) ? e.areas_atuacao : [];
-        const c1 = e.cor_primaria || '#4F46E5';
-        const c2 = e.cor_destaque || '#22D3EE';
+        const c1 = safeHex(e.cor_primaria, '#4F46E5');
+        const c2 = safeHex(e.cor_destaque, '#22D3EE');
+        const safeLogo = safeHttpsUrl(e.logo_url);
         const ini = computeInitials(e.nome_advogado || e.nome_escritorio);
 
         return `
           <div class="rpm-card rounded-3xl overflow-hidden flex flex-col justify-between">
             <div>
-              <div class="h-2 w-full" style="background: linear-gradient(90deg, ${esc(c1)} 0%, ${esc(c2)} 100%);"></div>
+              <div class="h-2 w-full" style="background: linear-gradient(90deg, ${c1} 0%, ${c2} 100%);"></div>
               <div class="p-5 sm:p-6 space-y-4">
                 <div class="flex items-start justify-between gap-3">
                   <div class="flex items-center gap-3.5">
-                    ${e.logo_url ? `
-                      <img src="${esc(e.logo_url)}" alt="${esc(e.nome_escritorio)}" class="w-13 h-13 rounded-2xl object-contain bg-white p-1 border border-slate-700">
+                    ${safeLogo ? `
+                      <img src="${esc(safeLogo)}" alt="${esc(e.nome_escritorio)}" class="w-13 h-13 rounded-2xl object-contain bg-white p-1 border border-slate-700">
                     ` : `
                       <div class="w-13 h-13 rounded-2xl flex items-center justify-center font-display font-black text-lg border-2 shrink-0"
-                        style="background:${esc(c1)}; color:${esc(c2)}; border-color:${esc(c2)};">${esc(ini)}</div>
+                        style="background:${c1}; color:${c2}; border-color:${c2};">${esc(ini)}</div>
                     `}
                     <div>
                       <div class="flex flex-wrap items-center gap-1.5">
@@ -720,14 +740,14 @@
                     <span class="text-slate-400">Sistema / Portal:</span>
                     <div class="flex items-center gap-1.5">
                       <a href="${esc(pubUrl)}" target="_blank" class="font-mono font-bold text-cyan-300 underline truncate max-w-[210px]">sistema.html?escritorio=${esc(e.slug)}</a>
-                      <button type="button" onclick="copyText('${esc(pubUrl)}', 'URL do Sistema copiada!')" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-[10px] font-bold text-slate-200 cursor-pointer">Copiar</button>
+                      <button type="button" onclick="copyTenantUrl('${e.id}', 'portal')" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-[10px] font-bold text-slate-200 cursor-pointer">Copiar</button>
                     </div>
                   </div>
                   <div class="flex flex-wrap items-center justify-between gap-2 pt-1.5 border-t border-slate-800/80">
                     <span class="text-slate-400">Site Vitrine:</span>
                     <div class="flex items-center gap-1.5">
                       <a href="${esc(siteUrl)}" target="_blank" class="font-mono font-bold ${siteEnabled ? 'text-emerald-300' : 'text-slate-500 line-through'} underline truncate max-w-[210px]">site.html?escritorio=${esc(e.slug)}</a>
-                      <button type="button" onclick="copyText('${esc(siteUrl)}', 'URL do Site Vitrine copiada!')" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-[10px] font-bold text-slate-200 cursor-pointer">Copiar</button>
+                      <button type="button" onclick="copyTenantUrl('${e.id}', 'site')" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-[10px] font-bold text-slate-200 cursor-pointer">Copiar</button>
                     </div>
                   </div>
                   <div class="flex flex-wrap items-center justify-between gap-2 pt-1.5 border-t border-slate-800/80">
@@ -794,7 +814,7 @@
                 <button type="button" onclick="openAvisoModal('${e.id}')" class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-300 cursor-pointer" title="Enviar Aviso / Comunicado">
                   <i data-lucide="megaphone" class="w-3.5 h-3.5"></i>
                 </button>
-                <button type="button" onclick="killTenantSessions('${e.id}', '${esc(e.nome_escritorio)}')" class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-300 cursor-pointer" title="Derrubar Sessões Ativas">
+                <button type="button" onclick="killTenantSessions('${e.id}')" class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-300 cursor-pointer" title="Derrubar Sessões Ativas">
                   <i data-lucide="power" class="w-3.5 h-3.5"></i>
                 </button>
                 <button type="button" onclick="openEditTenantModal('${e.id}')" class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 cursor-pointer" title="Editar Marca, Cores, Plano e Senha">
@@ -1010,7 +1030,9 @@
       showToast(aviso ? 'Aviso publicado no sistema do cliente!' : 'Aviso removido.');
     }
 
-    async function killTenantSessions(escritorioId, nome) {
+    async function killTenantSessions(escritorioId) {
+      const e = RPM.escritorios.find(x => x.id === escritorioId);
+      const nome = (e && e.nome_escritorio) || 'este escritório';
       if (!confirm(`Encerrar todas as sessões logadas de "${nome}" agora?`)) return;
       const res = await rpmAction('kill_sessions', { escritorio_id: escritorioId });
       if (!res) return;
@@ -1042,7 +1064,7 @@
     function updateBrandPreview() {
       const img = document.getElementById('cw-preview-img');
       if (!img) return;
-      const custom = (document.getElementById('cw-logo')?.value || '').trim();
+      const custom = safeHttpsUrl(document.getElementById('cw-logo')?.value || '');
       if (custom) { img.src = custom; return; }
       img.src = generateBrandSvgUri({
         nome_escritorio: document.getElementById('cw-nome')?.value || 'SILVA & ASSOCIADOS',

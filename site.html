@@ -502,7 +502,11 @@
 
       const nomeEsc = String(site.nome_escritorio || 'Escritório Jurídico').trim();
       const subEsc = String(site.subtitulo || 'Advocacia & Consultoria Jurídica').trim();
-      const advFull = String(site.nome_advogado || nomeEsc).trim();
+      const rawAdv = String(site.nome_advogado || nomeEsc).trim();
+      const rawTrat = String(site.tratamento || '').trim();
+      const advFull = (rawTrat && !/^(dr\.?|dra\.?|dr\(a\)\.?|escrit[oó]rio)/i.test(rawAdv))
+        ? `${rawTrat} ${rawAdv}`
+        : rawAdv;
       const oab = String(site.oab_registro || '').trim();
       const ufs = String(site.ufs_djen || '').trim();
       const waDigits = safeDigits(site.whatsapp_oficial);
