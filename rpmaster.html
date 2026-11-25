@@ -207,8 +207,11 @@
           <button type="button" onclick="loadRpmDashboard(true)" class="px-3 py-2 rounded-xl bg-slate-800/90 hover:bg-slate-700 border border-slate-700 text-xs font-bold text-slate-200 flex items-center gap-1.5 cursor-pointer">
             <i data-lucide="refresh-cw" class="w-3.5 h-3.5 text-cyan-400"></i> Atualizar
           </button>
-          <button type="button" onclick="openCreateSystemModal()" class="px-4 py-2 rounded-xl rpm-glow-btn text-white text-xs font-black flex items-center gap-1.5 cursor-pointer">
-            <i data-lucide="plus" class="w-4 h-4"></i> Criar Novo Sistema
+          <button type="button" onclick="openCreateSystemModal()" class="px-3.5 py-2 rounded-xl rpm-glow-btn text-white text-xs font-black flex items-center gap-1.5 cursor-pointer">
+            <i data-lucide="plus" class="w-4 h-4"></i> Novo Jurídico
+          </button>
+          <button type="button" onclick="openCreateCefModal()" class="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black flex items-center gap-1.5 cursor-pointer shadow-lg">
+            <i data-lucide="school" class="w-4 h-4"></i> Nova Escola
           </button>
           <button type="button" onclick="handleRpmLogout()" class="p-2 rounded-xl bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/30 text-rose-300 cursor-pointer" title="Sair do RPMASTER">
             <i data-lucide="log-out" class="w-4 h-4"></i>
@@ -223,14 +226,32 @@
 
       <!-- ABA 1: SISTEMAS, BLOQUEIOS & ÁREAS -->
       <section id="rpm-pane-sistemas" class="space-y-5">
+        <!-- Seletor Multi-Produto -->
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div class="flex flex-wrap items-center gap-2 bg-slate-900/90 p-1.5 rounded-2xl border border-slate-800">
+            <button type="button" onclick="setProductFilter('todos')" data-prodfilter="todos"
+              class="rpm-prod-btn px-4 py-2 rounded-xl text-xs font-extrabold transition cursor-pointer">
+              Todos (<span id="count-prod-todos">0</span>)
+            </button>
+            <button type="button" onclick="setProductFilter('juridico')" data-prodfilter="juridico"
+              class="rpm-prod-btn px-4 py-2 rounded-xl text-xs font-extrabold transition cursor-pointer">
+              Jurídico (<span id="count-prod-jur">0</span>)
+            </button>
+            <button type="button" onclick="setProductFilter('cef')" data-prodfilter="cef"
+              class="rpm-prod-btn px-4 py-2 rounded-xl text-xs font-extrabold transition cursor-pointer">
+              Caixa Escolar Fácil (<span id="count-prod-cef">0</span>)
+            </button>
+          </div>
+        </div>
+
         <div class="rpm-card rounded-2xl p-4 flex flex-wrap items-center justify-between gap-3">
           <div class="flex flex-wrap items-center gap-2 flex-1 min-w-[240px]">
             <div class="relative flex-1 max-w-md">
               <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
-              <input id="rpm-search" type="text" oninput="renderTenantsGrid()" placeholder="Buscar sistema por marca, advogado(a), OAB, slug ou @login..."
+              <input id="rpm-search" type="text" oninput="renderSistemasGrid()" placeholder="Buscar por escritório, escola, diretor(a), advogado(a), OAB ou slug..."
                 class="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-950/70 border border-slate-700/80 text-xs sm:text-sm text-white focus:border-cyan-400 focus:outline-none">
             </div>
-            <select id="rpm-filter-status" onchange="renderTenantsGrid()"
+            <select id="rpm-filter-status" onchange="renderSistemasGrid()"
               class="px-3.5 py-2.5 rounded-xl bg-slate-950/70 border border-slate-700/80 text-xs font-bold text-slate-200 focus:border-cyan-400 focus:outline-none">
               <option value="">Todos os Status</option>
               <option value="ativos">Somente Ativos</option>
@@ -242,7 +263,7 @@
           </div>
         </div>
 
-        <div id="rpm-tenants-grid" class="grid grid-cols-1 lg:grid-cols-2 gap-5"></div>
+        <div id="rpm-sistemas-grid" class="grid grid-cols-1 lg:grid-cols-2 gap-5"></div>
       </section>
 
       <!-- ABA 2: AUDITORIA GLOBAL -->
@@ -316,12 +337,30 @@
       'Contratos & Execuções'
     ];
 
+    const CEF_MODELO_ID = '00000000-0000-4000-9000-000000000001';
+
+    const CEF_MODULES = [
+      { key: 'lancar', label: 'Anotar Notas', desc: 'Lançar, editar e excluir entradas e gastos de verbas' },
+      { key: 'fornecedores', label: 'Fornecedores', desc: 'Cadastro de lojas, papelarias e prestadores de serviço' },
+      { key: 'relatorios', label: 'Relatórios / PDF / WhatsApp', desc: 'Folha de prestação de contas e envio pelo WhatsApp' },
+      { key: 'backup', label: 'Cópia de Segurança', desc: 'Exportação e restauração completa em arquivo .json' },
+      { key: 'graficos', label: 'Painel de Gráficos', desc: 'Gráficos de acompanhamento por verba e divisão de gastos' }
+    ];
+
+    const CEF_PLAN_PRESETS = {
+      'Escola Start':       { mens: '67.00',  setup: '197.00', disabled: ['graficos'] },
+      'Escola Pro':         { mens: '97.00',  setup: '297.00', disabled: [] },
+      'Rede / Secretaria':  { mens: '197.00', setup: '497.00', disabled: [] }
+    };
+
     const RPM = {
       token: localStorage.getItem('rpm_master_token') || '',
       username: localStorage.getItem('rpm_master_user') || '@rpmaster',
       tab: 'sistemas',
+      productFilter: 'todos',
       saude: null,
       escritorios: [],
+      escolasCef: [],
       auditoria: []
     };
 
@@ -423,6 +462,35 @@
         url.searchParams.set('escritorio', slug);
       }
       return url.toString();
+    }
+
+    function getCefBaseUrl() {
+      return 'https://minhaempresacrm.github.io/caixa-escolar-facil/';
+    }
+
+    function buildCefUrl(slug) {
+      const url = new URL(getCefBaseUrl());
+      if (slug) url.searchParams.set('escola', slug);
+      return url.toString();
+    }
+
+    function copyCefUrl(escolaId) {
+      const e = (RPM.escolasCef || []).find(x => x.id === escolaId);
+      if (!e) return;
+      copyText(buildCefUrl(e.slug), 'URL da Escola copiada!');
+    }
+
+    function applyCefPlanPreset(plano) {
+      const preset = CEF_PLAN_PRESETS[plano];
+      if (!preset) return;
+      const mEl = document.getElementById('cef-mens');
+      const sEl = document.getElementById('cef-setup');
+      if (mEl) mEl.value = preset.mens;
+      if (sEl) sEl.value = preset.setup;
+      document.querySelectorAll('[data-cef-mod]').forEach(cb => {
+        const key = cb.getAttribute('data-cef-mod');
+        cb.checked = !preset.disabled.includes(key);
+      });
     }
 
     const PLAN_PRESETS = {
@@ -557,9 +625,10 @@
       }
       RPM.saude = data.saude || {};
       RPM.escritorios = data.escritorios || [];
+      RPM.escolasCef = data.escolas_cef || [];
       RPM.auditoria = data.auditoria || [];
       renderKpis();
-      renderTenantsGrid();
+      renderSistemasGrid();
       renderAuditTable();
       if (showMsg) showToast('Centro de Comando sincronizado!', 'info');
       return true;
@@ -582,15 +651,18 @@
     // RENDERIZAÇÃO DE KPIS, CARDS E AUDITORIA
     // =========================================================================
     function renderKpis() {
-      const lista = RPM.escritorios || [];
-      const ativos = lista.filter(e => e.ativo !== false && e.status_assinatura !== 'suspenso').length;
-      const bloq = lista.length - ativos;
-      const mrr = lista
+      const jur = RPM.escritorios || [];
+      const cef = RPM.escolasCef || [];
+      const todos = [...jur, ...cef];
+      const ativos = todos.filter(e => e.ativo !== false && e.status_assinatura !== 'suspenso').length;
+      const bloq = todos.length - ativos;
+      const mrr = todos
         .filter(e => e.ativo !== false && e.status_assinatura !== 'suspenso' && Number(e.valor_mensalidade || 0) > 0)
         .reduce((acc, e) => acc + Number(e.valor_mensalidade || 0), 0);
-      const setups = lista.reduce((acc, e) => acc + Number(e.valor_setup || 0), 0);
-      const totalCli = lista.reduce((acc, e) => acc + Number(e.total_clientes || 0), 0);
-      const totalProcs = lista.reduce((acc, e) => acc + Number(e.total_processos || 0), 0);
+      const setups = todos.reduce((acc, e) => acc + Number(e.valor_setup || 0), 0);
+      const totalCli = jur.reduce((acc, e) => acc + Number(e.total_clientes || 0), 0);
+      const totalProcs = jur.reduce((acc, e) => acc + Number(e.total_processos || 0), 0);
+      const totalNotasCef = cef.reduce((acc, e) => acc + Number(e.total_lancamentos || 0), 0);
       const db = (RPM.saude && RPM.saude.banco_dados) || { usado_mb: 0, limite_mb: 500, restante_mb: 500, percentual: 0 };
 
       document.getElementById('rpm-kpis-grid').innerHTML = `
@@ -601,7 +673,7 @@
           </div>
           <div class="font-mono text-3xl font-black text-white mt-2">${ativos} <span class="text-xs font-semibold text-slate-400">ativos</span></div>
           <div class="text-[11px] mt-2 ${bloq > 0 ? 'text-rose-400 font-bold' : 'text-emerald-400'}">
-            ${bloq > 0 ? `${bloq} suspenso(s) / bloqueado(s)` : 'Todos os sistemas operacionais'}
+            ${jur.length} Jurídico • ${cef.length} Caixa Escolar${bloq > 0 ? ` • ${bloq} bloq.` : ''}
           </div>
         </div>
 
@@ -620,7 +692,7 @@
             <i data-lucide="users" class="w-4 h-4 text-indigo-400"></i>
           </div>
           <div class="font-mono text-3xl font-black text-white mt-2">${totalProcs} <span class="text-xs font-semibold text-slate-400">processos</span></div>
-          <div class="text-[11px] text-slate-400 mt-2"><strong class="text-white">${totalCli}</strong> clientes finais isolados</div>
+          <div class="text-[11px] text-slate-400 mt-2"><strong class="text-white">${totalCli}</strong> clientes • <strong class="text-emerald-300">${totalNotasCef}</strong> notas escolares</div>
         </div>
 
         <div class="rpm-card rounded-2xl p-5">
@@ -634,6 +706,158 @@
       `;
     }
 
+    function setProductFilter(prod) {
+      RPM.productFilter = prod;
+      renderSistemasGrid();
+    }
+
+    function getEnabledCefModulesCount(e) {
+      const mods = (e.config_json && e.config_json.modulos) || {};
+      let active = 0;
+      for (const m of CEF_MODULES) {
+        if (!(m.key in mods) || mods[m.key] === true) active++;
+      }
+      return active;
+    }
+
+    function renderCefCard(e) {
+      const isModel = e.id === CEF_MODELO_ID;
+      const isAtivo = e.ativo !== false && e.status_assinatura !== 'suspenso';
+      const cfg = e.config_json || {};
+      const bloqTipo = cfg.bloqueio_tipo || 'suspenso';
+      const bloqMotivo = cfg.bloqueio_motivo || '';
+      const aviso = cfg.aviso_rpmaster || '';
+      const cefUrl = buildCefUrl(e.slug);
+      const modCount = getEnabledCefModulesCount(e);
+      const c1 = safeHex(e.cor_primaria, '#1D4ED8');
+      const c2 = safeHex(e.cor_destaque, '#059669');
+      const ini = computeInitials(e.nome_escola || 'CE');
+
+      return `
+        <div class="rpm-card rounded-3xl overflow-hidden flex flex-col justify-between border border-emerald-500/25">
+          <div>
+            <div class="h-2 w-full" style="background: linear-gradient(90deg, ${c1} 0%, ${c2} 100%);"></div>
+            <div class="p-5 sm:p-6 space-y-4">
+              <div class="flex items-start justify-between gap-3">
+                <div class="flex items-center gap-3.5">
+                  <div class="w-13 h-13 rounded-2xl flex items-center justify-center font-display font-black text-lg border-2 shrink-0"
+                    style="background:${c1}; color:#FFFFFF; border-color:${c2};">${esc(ini)}</div>
+                  <div>
+                    <div class="flex flex-wrap items-center gap-1.5">
+                      <span class="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-emerald-500/20 text-emerald-300 border border-emerald-400/40">
+                        Caixa Escolar Fácil
+                      </span>
+                      <span class="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase ${isAtivo ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30' : 'bg-rose-500/20 text-rose-300 border border-rose-500/40'}">
+                        ${isAtivo ? '● Ativo' : `⛔ ${esc(bloqTipo.toUpperCase())}`}
+                      </span>
+                      <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-800 text-slate-300 border border-slate-700">
+                        ${esc(e.plano || 'Escola Pro')}
+                      </span>
+                      <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-500/15 text-cyan-300 border border-indigo-400/30">
+                        ${modCount}/${CEF_MODULES.length} módulos
+                      </span>
+                    </div>
+                    <h3 class="text-lg font-black text-white mt-1">${esc(e.nome_escola)}</h3>
+                    <div class="text-xs text-slate-400">${esc(e.diretor_nome || 'Direção Escolar')}${e.cidade_uf ? ` • <strong class="text-slate-200">${esc(e.cidade_uf)}</strong>` : ''}</div>
+                  </div>
+                </div>
+                <div class="text-right shrink-0">
+                  <div class="font-mono text-sm font-black text-emerald-400">${isModel && Number(e.valor_mensalidade || 0) === 0 ? 'Modelo' : `${fmtMoney(Number(e.valor_mensalidade || 0))}/mês`}</div>
+                  <div class="text-[10px] text-slate-500">Sessões ativas: <strong class="text-slate-300">${Number(e.sessoes_ativas || 0)}</strong></div>
+                </div>
+              </div>
+
+              ${!isAtivo && bloqMotivo ? `
+                <div class="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-xs text-rose-200">
+                  <strong>Motivo do bloqueio:</strong> ${esc(bloqMotivo)}
+                </div>
+              ` : ''}
+
+              ${aviso ? `
+                <div class="p-3 rounded-xl bg-indigo-500/10 border border-cyan-400/30 text-xs text-cyan-200">
+                  <strong>Aviso ativo:</strong> ${esc(aviso)}
+                </div>
+              ` : ''}
+
+              <!-- Link Exclusivo da Escola -->
+              <div class="p-3.5 rounded-2xl bg-slate-950/70 border border-slate-800 space-y-2 text-xs">
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                  <span class="text-slate-400">App da Escola:</span>
+                  <div class="flex items-center gap-1.5">
+                    <a href="${esc(cefUrl)}" target="_blank" rel="noopener noreferrer" class="font-mono font-bold text-emerald-300 underline truncate max-w-[220px]">caixa-escolar-facil/?escola=${esc(e.slug)}</a>
+                    <button type="button" onclick="copyCefUrl('${e.id}')" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-[10px] font-bold text-slate-200 cursor-pointer">Copiar</button>
+                  </div>
+                </div>
+                <div class="flex flex-wrap items-center justify-between gap-2 pt-1.5 border-t border-slate-800/80">
+                  <div>
+                    <span class="text-slate-500">Acesso:</span> <strong class="font-mono text-white">PIN 4 dígitos (Bcrypt)</strong>
+                    ${e.whatsapp ? `<span class="text-slate-600 mx-1">•</span><span class="text-slate-500">WhatsApp:</span> <strong class="font-mono text-slate-300">${esc(e.whatsapp)}</strong>` : ''}
+                  </div>
+                  <div class="flex items-center gap-1">
+                    <span class="w-3 h-3 rounded-full border border-white/20" style="background:${c1}"></span>
+                    <span class="w-3 h-3 rounded-full border border-white/20" style="background:${c2}"></span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-3 gap-2 text-center">
+                <div class="p-2 rounded-xl bg-slate-950/50 border border-slate-800/80">
+                  <div class="font-mono text-sm font-black text-white">${Number(e.total_verbas || 0)}</div>
+                  <div class="text-[10px] text-slate-400">Verbas</div>
+                </div>
+                <div class="p-2 rounded-xl bg-slate-950/50 border border-slate-800/80">
+                  <div class="font-mono text-sm font-black text-white">${Number(e.total_lancamentos || 0)}</div>
+                  <div class="text-[10px] text-slate-400">Notas</div>
+                </div>
+                <div class="p-2 rounded-xl bg-slate-950/50 border border-slate-800/80">
+                  <div class="font-mono text-sm font-black text-white">${Number(e.total_fornecedores || 0)}</div>
+                  <div class="text-[10px] text-slate-400">Fornecedores</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Barra de Comando Escola (100% UUID-only, Zero XSS) -->
+          <div class="px-5 py-3.5 bg-slate-950/80 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-2">
+            <div class="flex flex-wrap items-center gap-1.5">
+              <button type="button" onclick="impersonateCef('${e.id}')"
+                class="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-extrabold flex items-center gap-1 cursor-pointer">
+                <i data-lucide="external-link" class="w-3.5 h-3.5"></i> Acessar Painel
+              </button>
+              <button type="button" onclick="openCreateCefModal('${e.id}')"
+                class="px-3 py-1.5 rounded-xl bg-indigo-500/20 hover:bg-indigo-500/30 border border-indigo-400/40 text-indigo-200 text-xs font-extrabold flex items-center gap-1 cursor-pointer">
+                <i data-lucide="copy" class="w-3.5 h-3.5"></i> Clonar
+              </button>
+              <button type="button" onclick="openCefModulesModal('${e.id}')"
+                class="px-3 py-1.5 rounded-xl bg-cyan-500/15 hover:bg-cyan-500/25 border border-cyan-400/40 text-cyan-200 text-xs font-extrabold flex items-center gap-1 cursor-pointer">
+                <i data-lucide="sliders-horizontal" class="w-3.5 h-3.5"></i> Módulos
+              </button>
+              <button type="button" onclick="openCefBlockModal('${e.id}')"
+                class="px-3 py-1.5 rounded-xl ${isAtivo ? 'bg-amber-500/15 hover:bg-amber-500/25 border border-amber-400/40 text-amber-200' : 'bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-400/40 text-emerald-200'} text-xs font-extrabold flex items-center gap-1 cursor-pointer">
+                <i data-lucide="${isAtivo ? 'ban' : 'check-circle'}" class="w-3.5 h-3.5"></i> ${isAtivo ? 'Bloquear' : 'Desbloquear'}
+              </button>
+            </div>
+            <div class="flex items-center gap-1">
+              <button type="button" onclick="openCefAvisoModal('${e.id}')" class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-300 cursor-pointer" title="Enviar Aviso">
+                <i data-lucide="megaphone" class="w-3.5 h-3.5"></i>
+              </button>
+              <button type="button" onclick="killCefSessions('${e.id}')" class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-300 cursor-pointer" title="Derrubar Sessões">
+                <i data-lucide="power" class="w-3.5 h-3.5"></i>
+              </button>
+              <button type="button" onclick="openEditCefModal('${e.id}')" class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 cursor-pointer" title="Editar Escola, Plano e PIN">
+                <i data-lucide="settings" class="w-3.5 h-3.5"></i>
+              </button>
+              ${!isModel ? `
+                <button type="button" onclick="openDeleteCefModal('${e.id}')" class="p-2 rounded-xl bg-rose-500/15 hover:bg-rose-500/30 text-rose-300 cursor-pointer" title="Excluir Escola">
+                  <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                </button>
+              ` : ''}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
     function getEnabledModulesCount(e) {
       const mods = (e.config_json && e.config_json.modulos) || {};
       let active = 0;
@@ -643,26 +867,55 @@
       return active;
     }
 
-    function renderTenantsGrid() {
+    function renderSistemasGrid() {
       const q = (document.getElementById('rpm-search')?.value || '').toLowerCase().trim();
       const st = document.getElementById('rpm-filter-status')?.value || '';
-      const lista = (RPM.escritorios || []).filter(e => {
+      const jurAll = RPM.escritorios || [];
+      const cefAll = RPM.escolasCef || [];
+
+      const cTodos = document.getElementById('count-prod-todos');
+      const cJur = document.getElementById('count-prod-jur');
+      const cCef = document.getElementById('count-prod-cef');
+      if (cTodos) cTodos.textContent = jurAll.length + cefAll.length;
+      if (cJur) cJur.textContent = jurAll.length;
+      if (cCef) cCef.textContent = cefAll.length;
+
+      document.querySelectorAll('.rpm-prod-btn').forEach(btn => {
+        const active = btn.getAttribute('data-prodfilter') === RPM.productFilter;
+        btn.className = active
+          ? 'rpm-prod-btn px-4 py-2 rounded-xl text-xs font-extrabold bg-indigo-600 text-white shadow-md transition cursor-pointer'
+          : 'rpm-prod-btn px-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-white transition cursor-pointer';
+      });
+
+      const showJur = RPM.productFilter === 'todos' || RPM.productFilter === 'juridico';
+      const showCef = RPM.productFilter === 'todos' || RPM.productFilter === 'cef';
+
+      const lista = showJur ? jurAll.filter(e => {
         const isAtivo = e.ativo !== false && e.status_assinatura !== 'suspenso';
         if (st === 'ativos' && !isAtivo) return false;
         if (st === 'bloqueados' && isAtivo) return false;
         if (!q) return true;
         return `${e.nome_escritorio || ''} ${e.nome_advogado || ''} ${e.slug || ''} ${e.oab_registro || ''} ${e.admin_user_login || ''}`.toLowerCase().includes(q);
-      });
+      }) : [];
 
-      document.getElementById('rpm-count-label').textContent = lista.length;
-      const grid = document.getElementById('rpm-tenants-grid');
+      const listaCef = showCef ? cefAll.filter(e => {
+        const isAtivo = e.ativo !== false && e.status_assinatura !== 'suspenso';
+        if (st === 'ativos' && !isAtivo) return false;
+        if (st === 'bloqueados' && isAtivo) return false;
+        if (!q) return true;
+        return `${e.nome_escola || ''} ${e.diretor_nome || ''} ${e.cidade_uf || ''} ${e.slug || ''}`.toLowerCase().includes(q);
+      }) : [];
 
-      if (lista.length === 0) {
+      const totalExibido = lista.length + listaCef.length;
+      document.getElementById('rpm-count-label').textContent = totalExibido;
+      const grid = document.getElementById('rpm-sistemas-grid');
+
+      if (totalExibido === 0) {
         grid.innerHTML = '<div class="lg:col-span-2 rpm-card rounded-2xl p-10 text-center text-sm text-slate-400">Nenhum sistema encontrado para este filtro.</div>';
         return;
       }
 
-      grid.innerHTML = lista.map(e => {
+      const jurHtml = lista.map(e => {
         const isNat = e.id === '00000000-0000-4000-8000-000000000001';
         const isAtivo = e.ativo !== false && e.status_assinatura !== 'suspenso';
         const cfg = e.config_json || {};
@@ -830,8 +1083,11 @@
           </div>
         `;
       }).join('');
+      const cefHtml = listaCef.map(renderCefCard).join('');
+      grid.innerHTML = jurHtml + cefHtml;
       refreshIcons();
     }
+    const renderTenantsGrid = renderSistemasGrid;
 
     function renderAuditTable() {
       const tb = document.getElementById('rpm-audit-tbody');
@@ -1415,6 +1671,421 @@
       closeModal();
       await loadRpmDashboard(false);
       showToast('Sistema excluído.');
+    }
+
+    // =========================================================================
+    // AÇÕES & MODAIS DO PRODUTO 2: CAIXA ESCOLAR FÁCIL (CLONÁVEL, SEM VITRINE)
+    // =========================================================================
+    async function rpmCefAction(action, payload) {
+      const { data, error } = await sb.rpc('rpm_manage_cef', {
+        p_token: RPM.token,
+        p_action: action,
+        p_payload: payload
+      });
+      if (error || !data || !data.ok) {
+        showToast((data && data.error) || (error && error.message) || 'Erro na operação Caixa Escolar.', 'error');
+        return null;
+      }
+      return data;
+    }
+
+    function autoCefSlug(val) {
+      const s = String(val || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+      const el = document.getElementById('cef-slug');
+      if (el && !el.dataset.touched) el.value = s;
+    }
+
+    function openCreateCefModal(cloneFromId = '') {
+      const src = cloneFromId ? (RPM.escolasCef || []).find(x => x.id === cloneFromId) : null;
+      const srcMods = (src && src.config_json && src.config_json.modulos) || {};
+      const c1 = safeHex(src && src.cor_primaria, '#1D4ED8');
+      const c2 = safeHex(src && src.cor_destaque, '#059669');
+      const planoInit = (src && src.plano && CEF_PLAN_PRESETS[src.plano]) ? src.plano : 'Escola Pro';
+      const mensInit = (src && Number(src.valor_mensalidade) > 0) ? Number(src.valor_mensalidade).toFixed(2) : '97.00';
+      const setupInit = (src && Number(src.valor_setup) > 0) ? Number(src.valor_setup).toFixed(2) : '297.00';
+
+      openModal(`
+        <form onsubmit="submitCreateCef(event)" class="space-y-4">
+          <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+            <div>
+              <span class="text-[10px] font-black uppercase tracking-widest text-emerald-400">Caixa Escolar Fácil • Sem Site Vitrine</span>
+              <h3 class="text-lg font-black text-white">${src ? `Clonar Escola a partir de ${esc(src.nome_escola)}` : 'Criar Nova Escola (Caixa Escolar Fácil)'}</h3>
+            </div>
+            <button type="button" onclick="closeModal()" class="p-1.5 rounded-lg hover:bg-slate-800 text-slate-400"><i data-lucide="x" class="w-4 h-4"></i></button>
+          </div>
+          <input type="hidden" id="cef-clone-from" value="${esc(src ? src.id : '')}">
+          ${src ? `
+            <div class="p-3 rounded-xl bg-emerald-500/10 border border-emerald-400/30 text-xs text-emerald-200 space-y-1.5">
+              <div><strong>Clonagem limpa ativada:</strong> copia cores, plano, módulos e a estrutura de verbas de <strong>${esc(src.nome_escola)}</strong> com <strong>lançamentos financeiros zerados</strong>.</div>
+              <label class="inline-flex items-center gap-2 cursor-pointer text-slate-200 font-semibold">
+                <input type="checkbox" id="cef-copiar-forns" class="rounded text-emerald-500">
+                <span>Copiar também a lista de fornecedores da escola origem</span>
+              </label>
+            </div>
+          ` : ''}
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+            <div>
+              <label class="font-bold text-slate-300 block mb-1">Nome da Nova Escola *</label>
+              <input id="cef-nome" required oninput="autoCefSlug(this.value)" placeholder="Ex: E.M. Dom Pedro II" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-white font-bold">
+            </div>
+            <div>
+              <label class="font-bold text-slate-300 block mb-1">Link Exclusivo (slug) *</label>
+              <input id="cef-slug" required oninput="this.dataset.touched='1'" placeholder="em-dom-pedro-ii" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-emerald-300 font-mono font-bold">
+            </div>
+            <div>
+              <label class="font-bold text-slate-300 block mb-1">Diretor(a) / Responsável</label>
+              <input id="cef-diretor" placeholder="Ex: Prof. Carlos Eduardo" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-white">
+            </div>
+            <div>
+              <label class="font-bold text-slate-300 block mb-1">Cidade / UF</label>
+              <input id="cef-cidade" placeholder="Ex: Niterói/RJ" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-white">
+            </div>
+            <div>
+              <label class="font-bold text-slate-300 block mb-1">WhatsApp da Escola (Opcional)</label>
+              <input id="cef-whats" placeholder="5521999999999" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-white font-mono">
+            </div>
+            <div>
+              <label class="font-bold text-slate-300 block mb-1">PIN Inicial (4 números) *</label>
+              <input id="cef-pin" required pattern="\\d{4}" maxlength="4" value="1234" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-cyan-300 font-mono font-black">
+            </div>
+            <div>
+              <label class="font-bold text-slate-300 block mb-1">Cor Primária</label>
+              <div class="flex gap-2">
+                <input type="color" value="${c1}" oninput="document.getElementById('cef-c1').value=this.value" class="w-10 h-10 rounded-lg bg-slate-950 border border-slate-700">
+                <input id="cef-c1" value="${c1}" class="flex-1 px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white font-mono">
+              </div>
+            </div>
+            <div>
+              <label class="font-bold text-slate-300 block mb-1">Cor Destaque</label>
+              <div class="flex gap-2">
+                <input type="color" value="${c2}" oninput="document.getElementById('cef-c2').value=this.value" class="w-10 h-10 rounded-lg bg-slate-950 border border-slate-700">
+                <input id="cef-c2" value="${c2}" class="flex-1 px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white font-mono">
+              </div>
+            </div>
+            <div class="grid grid-cols-3 gap-2 sm:col-span-2">
+              <div>
+                <label class="font-bold text-slate-300 block mb-1">Plano</label>
+                <select id="cef-plano" onchange="applyCefPlanPreset(this.value)" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white font-bold">
+                  <option value="Escola Pro" ${planoInit === 'Escola Pro' ? 'selected' : ''}>Escola Pro</option>
+                  <option value="Escola Start" ${planoInit === 'Escola Start' ? 'selected' : ''}>Escola Start</option>
+                  <option value="Rede / Secretaria" ${planoInit === 'Rede / Secretaria' ? 'selected' : ''}>Rede / Secretaria</option>
+                </select>
+              </div>
+              <div>
+                <label class="font-bold text-slate-300 block mb-1">Mensalidade (R$)</label>
+                <input id="cef-mens" type="number" step="0.01" value="${mensInit}" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white font-mono">
+              </div>
+              <div>
+                <label class="font-bold text-slate-300 block mb-1">Setup (R$)</label>
+                <input id="cef-setup" type="number" step="0.01" value="${setupInit}" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white font-mono">
+              </div>
+            </div>
+          </div>
+          <div class="pt-2 border-t border-slate-800 space-y-2">
+            <div class="text-xs font-extrabold uppercase tracking-wider text-emerald-300">Módulos Liberados nesta Escola</div>
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 text-[11px]">
+              ${CEF_MODULES.map(m => {
+                const checked = src ? (!(m.key in srcMods) || srcMods[m.key] === true) : true;
+                return `
+                  <label class="p-2 rounded-xl bg-slate-950/70 border border-slate-800 flex items-center gap-1.5 cursor-pointer">
+                    <input type="checkbox" data-cef-mod="${m.key}" ${checked ? 'checked' : ''} class="rounded text-emerald-500">
+                    <span class="text-slate-200 font-semibold truncate">${esc(m.label)}</span>
+                  </label>
+                `;
+              }).join('')}
+            </div>
+          </div>
+          <div class="flex justify-end gap-2 pt-3 border-t border-slate-800">
+            <button type="button" onclick="closeModal()" class="px-4 py-2.5 rounded-xl border border-slate-700 text-xs font-bold text-slate-300 cursor-pointer">Cancelar</button>
+            <button type="submit" class="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black cursor-pointer">${src ? 'Clonar Escola Agora' : 'Criar Escola Agora'}</button>
+          </div>
+        </form>
+      `);
+    }
+
+    async function submitCreateCef(ev) {
+      ev.preventDefault();
+      const modulos = {};
+      document.querySelectorAll('[data-cef-mod]').forEach(cb => {
+        modulos[cb.getAttribute('data-cef-mod')] = cb.checked;
+      });
+      const res = await rpmCefAction('create', {
+        nome_escola: document.getElementById('cef-nome').value.trim(),
+        slug: document.getElementById('cef-slug').value.trim(),
+        diretor_nome: document.getElementById('cef-diretor').value.trim(),
+        cidade_uf: document.getElementById('cef-cidade').value.trim(),
+        whatsapp: document.getElementById('cef-whats').value.trim(),
+        pin: document.getElementById('cef-pin').value.trim(),
+        cor_primaria: document.getElementById('cef-c1').value.trim(),
+        cor_destaque: document.getElementById('cef-c2').value.trim(),
+        plano: document.getElementById('cef-plano').value,
+        valor_mensalidade: document.getElementById('cef-mens').value,
+        valor_setup: document.getElementById('cef-setup').value,
+        clone_from_id: document.getElementById('cef-clone-from').value || null,
+        copiar_fornecedores: Boolean(document.getElementById('cef-copiar-forns')?.checked),
+        modulos
+      });
+      if (!res) return;
+      closeModal();
+      await loadRpmDashboard(false);
+      showToast(`Escola "${res.escola.nome_escola}" criada no RPMASTER!`);
+    }
+
+    function openEditCefModal(escolaId) {
+      const e = (RPM.escolasCef || []).find(x => x.id === escolaId);
+      if (!e) return;
+      const c1 = safeHex(e.cor_primaria, '#1D4ED8');
+      const c2 = safeHex(e.cor_destaque, '#059669');
+      openModal(`
+        <form onsubmit="submitEditCef(event, '${e.id}')" class="space-y-4">
+          <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+            <h3 class="text-lg font-black text-white">Editar Escola — ${esc(e.nome_escola)}</h3>
+            <button type="button" onclick="closeModal()" class="p-1.5 rounded-lg hover:bg-slate-800 text-slate-400"><i data-lucide="x" class="w-4 h-4"></i></button>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+            <div>
+              <label class="font-bold text-slate-300 block mb-1">Nome da Escola *</label>
+              <input id="edcef-nome" required value="${esc(e.nome_escola || '')}" class="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-white font-bold">
+            </div>
+            <div>
+              <label class="font-bold text-slate-300 block mb-1">Diretor(a)</label>
+              <input id="edcef-dir" value="${esc(e.diretor_nome || '')}" class="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-white">
+            </div>
+            <div>
+              <label class="font-bold text-slate-300 block mb-1">Cidade / UF</label>
+              <input id="edcef-cid" value="${esc(e.cidade_uf || '')}" class="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-white">
+            </div>
+            <div>
+              <label class="font-bold text-slate-300 block mb-1">WhatsApp</label>
+              <input id="edcef-whats" value="${esc(e.whatsapp || '')}" class="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-white font-mono">
+            </div>
+            <div>
+              <label class="font-bold text-slate-300 block mb-1">Plano</label>
+              <input id="edcef-plano" value="${esc(e.plano || '')}" class="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-white">
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <label class="font-bold text-slate-300 block mb-1">Mensalidade</label>
+                <input id="edcef-mens" type="number" step="0.01" value="${Number(e.valor_mensalidade || 0)}" class="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-white font-mono">
+              </div>
+              <div>
+                <label class="font-bold text-slate-300 block mb-1">Setup</label>
+                <input id="edcef-setup" type="number" step="0.01" value="${Number(e.valor_setup || 0)}" class="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-white font-mono">
+              </div>
+            </div>
+            <div>
+              <label class="font-bold text-slate-300 block mb-1">Cor Primária</label>
+              <div class="flex gap-2">
+                <input type="color" value="${c1}" oninput="document.getElementById('edcef-c1').value=this.value" class="w-10 h-10 rounded-lg bg-slate-950 border border-slate-700">
+                <input id="edcef-c1" value="${c1}" class="flex-1 px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white font-mono">
+              </div>
+            </div>
+            <div>
+              <label class="font-bold text-slate-300 block mb-1">Cor Destaque</label>
+              <div class="flex gap-2">
+                <input type="color" value="${c2}" oninput="document.getElementById('edcef-c2').value=this.value" class="w-10 h-10 rounded-lg bg-slate-950 border border-slate-700">
+                <input id="edcef-c2" value="${c2}" class="flex-1 px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white font-mono">
+              </div>
+            </div>
+            <div class="sm:col-span-2">
+              <label class="font-bold text-slate-300 block mb-1">Redefinir PIN (4 números — deixe em branco para manter)</label>
+              <input id="edcef-pin" maxlength="4" pattern="\\d{4}" placeholder="Ex: 5678" class="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-cyan-300 font-mono">
+            </div>
+          </div>
+          <div class="flex justify-end gap-2 pt-3 border-t border-slate-800">
+            <button type="button" onclick="closeModal()" class="px-4 py-2 rounded-xl border border-slate-700 text-xs font-bold text-slate-300 cursor-pointer">Cancelar</button>
+            <button type="submit" class="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black cursor-pointer">Salvar Alterações</button>
+          </div>
+        </form>
+      `);
+    }
+
+    async function submitEditCef(ev, escolaId) {
+      ev.preventDefault();
+      const res = await rpmCefAction('update', {
+        escola_id: escolaId,
+        nome_escola: document.getElementById('edcef-nome').value.trim(),
+        diretor_nome: document.getElementById('edcef-dir').value.trim(),
+        cidade_uf: document.getElementById('edcef-cid').value.trim(),
+        whatsapp: document.getElementById('edcef-whats').value.trim(),
+        plano: document.getElementById('edcef-plano').value.trim(),
+        valor_mensalidade: document.getElementById('edcef-mens').value,
+        valor_setup: document.getElementById('edcef-setup').value,
+        cor_primaria: document.getElementById('edcef-c1').value.trim(),
+        cor_destaque: document.getElementById('edcef-c2').value.trim(),
+        new_pin: document.getElementById('edcef-pin').value.trim()
+      });
+      if (!res) return;
+      closeModal();
+      await loadRpmDashboard(false);
+      showToast('Escola atualizada com sucesso!');
+    }
+
+    function openCefModulesModal(escolaId) {
+      const e = (RPM.escolasCef || []).find(x => x.id === escolaId);
+      if (!e) return;
+      const mods = (e.config_json && e.config_json.modulos) || {};
+      openModal(`
+        <form onsubmit="submitCefModules(event, '${e.id}')" class="space-y-4">
+          <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+            <h3 class="text-lg font-black text-white">Módulos — ${esc(e.nome_escola)}</h3>
+            <button type="button" onclick="closeModal()" class="p-1.5 rounded-lg hover:bg-slate-800 text-slate-400"><i data-lucide="x" class="w-4 h-4"></i></button>
+          </div>
+          <div class="grid grid-cols-1 gap-2.5 text-xs">
+            ${CEF_MODULES.map(m => {
+              const on = !(m.key in mods) || mods[m.key] === true;
+              return `
+                <label class="p-3 rounded-xl bg-slate-950/70 border border-slate-800 flex items-start gap-2.5 cursor-pointer">
+                  <input type="checkbox" data-cefmod-edit="${m.key}" ${on ? 'checked' : ''} class="mt-0.5 rounded text-emerald-500">
+                  <div>
+                    <div class="font-bold text-white">${esc(m.label)}</div>
+                    <div class="text-[11px] text-slate-400">${esc(m.desc)}</div>
+                  </div>
+                </label>
+              `;
+            }).join('')}
+          </div>
+          <div class="flex justify-end gap-2 pt-3 border-t border-slate-800">
+            <button type="button" onclick="closeModal()" class="px-4 py-2 rounded-xl border border-slate-700 text-xs font-bold text-slate-300 cursor-pointer">Cancelar</button>
+            <button type="submit" class="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black cursor-pointer">Salvar Módulos</button>
+          </div>
+        </form>
+      `);
+    }
+
+    async function submitCefModules(ev, escolaId) {
+      ev.preventDefault();
+      const modulos = {};
+      document.querySelectorAll('[data-cefmod-edit]').forEach(cb => {
+        modulos[cb.getAttribute('data-cefmod-edit')] = cb.checked;
+      });
+      const res = await rpmCefAction('set_modules', { escola_id: escolaId, modulos });
+      if (!res) return;
+      closeModal();
+      await loadRpmDashboard(false);
+      showToast('Módulos da escola atualizados!');
+    }
+
+    function openCefBlockModal(escolaId) {
+      const e = (RPM.escolasCef || []).find(x => x.id === escolaId);
+      if (!e) return;
+      const isAtivo = e.ativo !== false && e.status_assinatura !== 'suspenso';
+      const motivoAtual = (e.config_json && e.config_json.bloqueio_motivo) || '';
+      openModal(`
+        <form onsubmit="submitCefBlock(event, '${e.id}')" class="space-y-4">
+          <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+            <h3 class="text-lg font-black text-white">Controle de Acesso — ${esc(e.nome_escola)}</h3>
+            <button type="button" onclick="closeModal()" class="p-1.5 rounded-lg hover:bg-slate-800 text-slate-400"><i data-lucide="x" class="w-4 h-4"></i></button>
+          </div>
+          <div class="space-y-3 text-xs">
+            <div>
+              <label class="font-bold text-slate-300 block mb-1">Novo Status</label>
+              <select id="cef-blk-status" class="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-white font-bold">
+                <option value="ativo" ${!isAtivo ? 'selected' : ''}>Ativo (Liberar Acesso)</option>
+                <option value="suspenso" ${isAtivo ? 'selected' : ''}>Suspenso (Inadimplência)</option>
+                <option value="bloqueado">Bloqueado (Trava Total)</option>
+              </select>
+            </div>
+            <div>
+              <label class="font-bold text-slate-300 block mb-1">Motivo exibido para a Escola</label>
+              <textarea id="cef-blk-motivo" rows="3" placeholder="Ex: Mensalidade em atraso. Fale com o suporte para reativar." class="w-full p-3 rounded-xl bg-slate-950 border border-slate-700 text-white">${esc(motivoAtual)}</textarea>
+            </div>
+          </div>
+          <div class="flex justify-end gap-2 pt-2">
+            <button type="button" onclick="closeModal()" class="px-4 py-2 rounded-xl border border-slate-700 text-xs font-bold text-slate-300 cursor-pointer">Cancelar</button>
+            <button type="submit" class="px-5 py-2 rounded-xl bg-amber-500 text-slate-950 text-xs font-black cursor-pointer">Aplicar Status</button>
+          </div>
+        </form>
+      `);
+    }
+
+    async function submitCefBlock(ev, escolaId) {
+      ev.preventDefault();
+      const status = document.getElementById('cef-blk-status').value;
+      const motivo = document.getElementById('cef-blk-motivo').value.trim();
+      const res = await rpmCefAction('set_status', { escola_id: escolaId, status, motivo });
+      if (!res) return;
+      closeModal();
+      await loadRpmDashboard(false);
+      showToast(status === 'ativo' ? 'Escola reativada!' : 'Escola bloqueada e sessões encerradas.');
+    }
+
+    function openCefAvisoModal(escolaId) {
+      const e = (RPM.escolasCef || []).find(x => x.id === escolaId);
+      if (!e) return;
+      const avisoAtual = (e.config_json && e.config_json.aviso_rpmaster) || '';
+      openModal(`
+        <form onsubmit="submitCefAviso(event, '${e.id}')" class="space-y-4">
+          <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+            <h3 class="text-lg font-black text-white">Aviso no App — ${esc(e.nome_escola)}</h3>
+            <button type="button" onclick="closeModal()" class="p-1.5 rounded-lg hover:bg-slate-800 text-slate-400"><i data-lucide="x" class="w-4 h-4"></i></button>
+          </div>
+          <textarea id="cef-aviso-input" rows="3" maxlength="500" placeholder="Deixe vazio para remover o aviso." class="w-full p-3 rounded-xl bg-slate-950 border border-slate-700 text-xs text-white">${esc(avisoAtual)}</textarea>
+          <div class="flex justify-end gap-2">
+            <button type="button" onclick="closeModal()" class="px-4 py-2 rounded-xl border border-slate-700 text-xs font-bold text-slate-300 cursor-pointer">Cancelar</button>
+            <button type="submit" class="px-5 py-2 rounded-xl bg-emerald-600 text-white text-xs font-black cursor-pointer">Salvar Aviso</button>
+          </div>
+        </form>
+      `);
+    }
+
+    async function submitCefAviso(ev, escolaId) {
+      ev.preventDefault();
+      const aviso = document.getElementById('cef-aviso-input').value.trim();
+      const res = await rpmCefAction('set_aviso', { escola_id: escolaId, aviso });
+      if (!res) return;
+      closeModal();
+      await loadRpmDashboard(false);
+      showToast(aviso ? 'Aviso publicado na escola!' : 'Aviso removido.');
+    }
+
+    async function killCefSessions(escolaId) {
+      const e = (RPM.escolasCef || []).find(x => x.id === escolaId);
+      const nome = (e && e.nome_escola) || 'esta escola';
+      if (!confirm(`Encerrar todas as sessões logadas de "${nome}" agora?`)) return;
+      const res = await rpmCefAction('kill_sessions', { escola_id: escolaId });
+      if (!res) return;
+      await loadRpmDashboard(false);
+      showToast(`Sessões de ${nome} encerradas!`);
+    }
+
+    async function impersonateCef(escolaId) {
+      const res = await rpmCefAction('impersonate', { escola_id: escolaId });
+      if (!res || !res.token) return;
+      const u = new URL(buildCefUrl(res.slug));
+      u.searchParams.set('rpm_cef_token', res.token);
+      window.open(u.toString(), '_blank', 'noopener,noreferrer');
+      showToast('Sessão de suporte aberta em nova aba!');
+    }
+
+    function openDeleteCefModal(escolaId) {
+      const e = (RPM.escolasCef || []).find(x => x.id === escolaId);
+      if (!e) return;
+      openModal(`
+        <form onsubmit="submitDeleteCef(event, '${e.id}')" class="space-y-4">
+          <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+            <h3 class="text-lg font-black text-rose-300">Excluir Escola — ${esc(e.nome_escola)}</h3>
+            <button type="button" onclick="closeModal()" class="p-1.5 rounded-lg hover:bg-slate-800 text-slate-400"><i data-lucide="x" class="w-4 h-4"></i></button>
+          </div>
+          <p class="text-xs text-slate-300">Esta ação apaga permanentemente todos os dados na nuvem de <strong>${esc(e.nome_escola)}</strong>. Digite o link <code class="text-rose-300 font-mono">${esc(e.slug)}</code> para confirmar:</p>
+          <input id="cef-del-confirm" required placeholder="${esc(e.slug)}" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-rose-500/40 text-xs text-white font-mono">
+          <div class="flex justify-end gap-2">
+            <button type="button" onclick="closeModal()" class="px-4 py-2 rounded-xl border border-slate-700 text-xs font-bold text-slate-300 cursor-pointer">Cancelar</button>
+            <button type="submit" class="px-5 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-black cursor-pointer">Confirmar Exclusão</button>
+          </div>
+        </form>
+      `);
+    }
+
+    async function submitDeleteCef(ev, escolaId) {
+      ev.preventDefault();
+      const confirmSlug = document.getElementById('cef-del-confirm').value.trim();
+      const res = await rpmCefAction('delete', { escola_id: escolaId, confirm: confirmSlug });
+      if (!res) return;
+      closeModal();
+      await loadRpmDashboard(false);
+      showToast('Escola excluída com sucesso.');
     }
 
     function openChangePasswordModal() {
