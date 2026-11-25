@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' https: data: 'unsafe-inline' 'unsafe-eval'; img-src 'self' https: data: blob:; connect-src 'self' https://zlnaushxdvuznlwmongk.supabase.co;">
+  <title>Advocacia &amp; Consultoria Jurídica • RPMASTER</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    if (window.top !== window.self) {
+      try { window.top.location = window.self.location.href; } catch (_) { document.documentElement.style.display = 'none'; }
+    }
+  </script>
+  <style>
+    :root {
+      --brand-primary: #0F294A;
+      --brand-accent: #D4AF37;
+      --obsidian: #080A0F;
+    }
+    body {
+      font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+      background-color: var(--obsidian);
+      color: #F1F5F9;
+    }
+    .font-editorial { font-family: 'Cormorant Garamond', Georgia, serif; }
+    .brand-bar {
+      background: linear-gradient(90deg, #06080D 0%, var(--brand-primary) 50%, #06080D 100%);
+      border-bottom: 1px solid color-mix(in srgb, var(--brand-accent) 30%, transparent);
+    }
+    .brand-accent-text { color: var(--brand-accent); }
+    .brand-accent-border { border-color: color-mix(in srgb, var(--brand-accent) 38%, transparent); }
+    .brand-btn-primary {
+      background: linear-gradient(135deg, var(--brand-accent) 0%, color-mix(in srgb, var(--brand-accent) 76%, #FFFFFF) 55%, var(--brand-accent) 100%);
+      color: #080A0F;
+      transition: transform 0.18s ease, filter 0.18s ease, box-shadow 0.2s ease;
+    }
+    .brand-btn-primary:hover {
+      filter: brightness(1.08);
+      transform: translateY(-1px);
+      box-shadow: 0 12px 30px -8px color-mix(in srgb, var(--brand-accent) 55%, transparent);
+    }
+    .brand-btn-outline {
+      border: 1px solid color-mix(in srgb, var(--brand-accent) 45%, transparent);
+      background: color-mix(in srgb, var(--brand-primary) 35%, rgba(15, 23, 42, 0.7));
+      transition: background 0.18s ease, border-color 0.18s ease;
+    }
+    .brand-btn-outline:hover {
+      border-color: var(--brand-accent);
+      background: color-mix(in srgb, var(--brand-primary) 65%, rgba(15, 23, 42, 0.8));
+    }
+    .hero-backdrop {
+      background:
+        radial-gradient(880px 440px at 80% 15%, color-mix(in srgb, var(--brand-accent) 16%, transparent), transparent 70%),
+        radial-gradient(960px 560px at 15% 85%, color-mix(in srgb, var(--brand-primary) 48%, transparent), transparent 75%),
+        linear-gradient(180deg, #080A0F 0%, #0C101A 100%);
+    }
+    .glass-card {
+      background: linear-gradient(180deg, rgba(17, 24, 39, 0.78) 0%, rgba(10, 14, 24, 0.88) 100%);
+      border: 1px solid rgba(148, 163, 184, 0.14);
+      backdrop-filter: blur(16px);
+      transition: border-color 0.2s ease, transform 0.2s ease;
+    }
+    .glass-card:hover {
+      border-color: color-mix(in srgb, var(--brand-accent) 50%, transparent);
+      transform: translateY(-2px);
+    }
+  </style>
+</head>
+<body class="antialiased selection:bg-amber-300 selection:text-slate-950 overflow-x-clip">
+
+  <!-- LOADING STATE -->
+  <div id="state-loading" class="min-h-screen flex flex-col items-center justify-center p-6 text-center gap-4">
+    <div class="w-12 h-12 rounded-2xl border-2 border-slate-700 border-t-amber-300 animate-spin"></div>
+    <p class="text-sm font-semibold text-slate-400 tracking-wide">Carregando escritório digital...</p>
+  </div>
+
+  <!-- GUARD STATE (NOT FOUND / SUSPENDED / MODULE DISABLED) -->
+  <section id="state-guard" class="hidden min-h-screen flex items-center justify-center p-6">
+    <div class="max-w-md w-full glass-card rounded-3xl p-8 text-center space-y-5">
+      <div class="w-16 h-16 rounded-2xl mx-auto flex items-center justify-center bg-slate-900 border border-slate-700 text-amber-300">
+        <i id="guard-icon" data-lucide="shield-alert" class="w-8 h-8"></i>
+      </div>
+      <div class="space-y-2">
+        <div class="text-xs font-extrabold uppercase tracking-[0.22em] text-cyan-400">RPMASTER • Plataforma Jurídica</div>
+        <h1 id="guard-title" class="font-editorial text-3xl font-bold text-white">Escritório não localizado</h1>
+        <p id="guard-desc" class="text-sm text-slate-400 leading-relaxed">
+          O endereço solicitado não corresponde a um site institucional ativo no momento. Verifique o link fornecido pelo seu escritório.
+        </p>
+      </div>
+      <div class="pt-3 border-t border-slate-800 flex flex-col sm:flex-row gap-2.5 justify-center">
+        <a id="guard-portal-btn" href="./sistema.html" class="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold inline-flex items-center justify-center gap-2 transition">
+          <i data-lucide="log-in" class="w-4 h-4 text-cyan-400"></i> Acessar Portal Jurídico
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- MAIN WHITE-LABEL SITE -->
+  <div id="site-root" class="hidden min-h-screen flex flex-col">
+
+    <!-- Sticky Header -->
+    <div class="sticky top-0 z-40">
+      <div class="brand-bar py-2 px-4 text-xs font-semibold text-slate-100 text-center flex flex-wrap items-center justify-center gap-3">
+        <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/10 border brand-accent-border text-[11px] font-bold tracking-wider uppercase brand-accent-text">
+          <i data-lucide="scale" class="w-3.5 h-3.5"></i> Atendimento Jurídico Especializado
+        </span>
+        <span id="topbar-meta" class="text-slate-200/90"></span>
+      </div>
+
+      <header class="bg-[#080A0F]/92 backdrop-blur-xl border-b border-white/10">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 sm:h-[74px] flex items-center justify-between gap-4">
+          <a href="#inicio" class="flex items-center gap-3 min-w-0 group">
+            <div id="nav-logo-wrap" class="w-11 h-11 rounded-xl bg-white/5 p-1 border brand-accent-border flex items-center justify-center overflow-hidden shrink-0"></div>
+            <div class="min-w-0">
+              <div id="nav-brand-name" class="font-editorial font-bold text-lg sm:text-xl tracking-wide text-white leading-none truncate"></div>
+              <div id="nav-brand-sub" class="text-[11px] uppercase tracking-[0.16em] brand-accent-text font-semibold mt-1 truncate"></div>
+            </div>
+          </a>
+
+          <nav class="hidden lg:flex items-center gap-7 text-sm font-medium text-slate-300">
+            <a href="#sobre" class="hover:text-white transition">O Escritório</a>
+            <a href="#areas" class="hover:text-white transition">Áreas de Atuação</a>
+            <a href="#atuacao" class="hover:text-white transition">Como Atuamos</a>
+            <a href="#contato" class="hover:text-white transition">Contato</a>
+          </nav>
+
+          <div class="hidden sm:flex items-center gap-2.5">
+            <a id="nav-portal-btn" href="./sistema.html" class="brand-btn-outline text-slate-100 font-bold text-xs uppercase tracking-wider px-4 py-2.5 rounded-lg inline-flex items-center gap-1.5">
+              <i data-lucide="lock" class="w-3.5 h-3.5 brand-accent-text"></i> Área do Cliente
+            </a>
+            <a id="nav-wa-btn" href="#" target="_blank" rel="noopener noreferrer" class="brand-btn-primary font-extrabold text-xs uppercase tracking-wider px-4 py-2.5 rounded-lg inline-flex items-center gap-1.5">
+              <i data-lucide="message-circle" class="w-3.5 h-3.5"></i> <span id="nav-wa-label">WhatsApp</span>
+            </a>
+          </div>
+
+          <button type="button" id="mobile-menu-toggle" class="lg:hidden p-2 rounded-lg border border-white/15 text-slate-200 hover:text-white">
+            <i data-lucide="menu" class="w-5 h-5"></i>
+          </button>
+        </div>
+
+        <div id="mobile-menu-drawer" class="hidden lg:hidden bg-[#0B0F1A] border-t border-white/10 px-6 py-5 space-y-3 text-sm font-semibold">
+          <a href="#sobre" class="mobile-link block text-slate-200 hover:text-white py-1">O Escritório</a>
+          <a href="#areas" class="mobile-link block text-slate-200 hover:text-white py-1">Áreas de Atuação</a>
+          <a href="#atuacao" class="mobile-link block text-slate-200 hover:text-white py-1">Como Atuamos</a>
+          <a href="#contato" class="mobile-link block text-slate-200 hover:text-white py-1">Contato</a>
+          <div class="pt-3 border-t border-white/10 flex flex-col gap-2.5">
+            <a id="mob-portal-btn" href="./sistema.html" class="brand-btn-outline text-center text-white font-bold text-xs uppercase tracking-wider px-4 py-3 rounded-xl">Área do Cliente</a>
+            <a id="mob-wa-btn" href="#" target="_blank" rel="noopener noreferrer" class="brand-btn-primary text-center font-extrabold text-xs uppercase tracking-wider px-4 py-3 rounded-xl">Falar no WhatsApp</a>
+          </div>
+        </div>
+      </header>
+    </div>
+
+    <!-- HERO SECTION -->
+    <section id="inicio" class="hero-backdrop relative py-16 sm:py-24 lg:py-28 border-b border-white/10">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+        <div class="lg:col-span-7 space-y-6">
+          <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/5 border brand-accent-border text-xs font-bold uppercase tracking-[0.18em] brand-accent-text">
+            <i data-lucide="shield-check" class="w-4 h-4"></i>
+            <span id="hero-oab-pill">Advocacia Especializada</span>
+          </div>
+
+          <h1 id="hero-title" class="font-editorial text-4xl sm:text-5xl lg:text-6xl font-bold text-white leading-[1.08] tracking-tight"></h1>
+
+          <p id="hero-subtitle" class="text-lg sm:text-xl brand-accent-text font-medium"></p>
+
+          <p id="hero-bio" class="text-base text-slate-300 leading-relaxed max-w-2xl"></p>
+
+          <div class="flex flex-wrap items-center gap-3.5 pt-2">
+            <a id="hero-wa-btn" href="#" target="_blank" rel="noopener noreferrer" class="brand-btn-primary px-6 py-3.5 rounded-xl font-extrabold text-sm inline-flex items-center gap-2">
+              <i data-lucide="message-circle" class="w-4 h-4"></i> Iniciar Atendimento pelo WhatsApp
+            </a>
+            <button type="button" onclick="openConsultModal()" class="brand-btn-outline px-5 py-3.5 rounded-xl font-bold text-sm text-white inline-flex items-center gap-2">
+              <i data-lucide="send" class="w-4 h-4 brand-accent-text"></i> Enviar Resumo do Caso
+            </button>
+            <a id="hero-portal-btn" href="./sistema.html" class="px-5 py-3.5 rounded-xl border border-white/15 bg-white/5 hover:bg-white/10 font-bold text-sm text-slate-100 inline-flex items-center gap-2 transition">
+              <i data-lucide="folder-open" class="w-4 h-4 brand-accent-text"></i> Acompanhar Meu Processo
+            </a>
+          </div>
+        </div>
+
+        <div class="lg:col-span-5">
+          <div class="glass-card rounded-3xl p-7 sm:p-8 space-y-6 relative overflow-hidden">
+            <div class="flex items-center gap-4">
+              <div id="hero-card-emblem" class="w-16 h-16 rounded-2xl bg-white/5 p-1.5 border brand-accent-border flex items-center justify-center shrink-0 overflow-hidden"></div>
+              <div class="min-w-0">
+                <div class="text-xs font-bold uppercase tracking-widest brand-accent-text">Responsável Técnico</div>
+                <div id="hero-adv-name" class="font-editorial text-2xl font-bold text-white truncate"></div>
+                <div id="hero-oab-line" class="text-xs font-mono text-slate-400 mt-0.5"></div>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+              <div class="p-3.5 rounded-2xl bg-white/5 border border-white/10 space-y-1">
+                <div class="font-bold brand-accent-text flex items-center gap-1.5"><i data-lucide="clock" class="w-3.5 h-3.5"></i> Acompanhamento Digital</div>
+                <p class="text-slate-300 leading-relaxed">Andamentos traduzidos em linguagem simples no Portal do Cliente.</p>
+              </div>
+              <div class="p-3.5 rounded-2xl bg-white/5 border border-white/10 space-y-1">
+                <div class="font-bold brand-accent-text flex items-center gap-1.5"><i data-lucide="lock" class="w-3.5 h-3.5"></i> Sigilo Profissional</div>
+                <p class="text-slate-300 leading-relaxed">Atendimento direto, confidencial e protegido por criptografia.</p>
+              </div>
+            </div>
+
+            <div id="hero-contact-summary" class="pt-4 border-t border-white/10 space-y-2 text-xs text-slate-300"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SOBRE / O ESCRITÓRIO -->
+    <section id="sobre" class="py-16 sm:py-20 border-b border-white/10 bg-[#0A0E17]">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
+        <div class="lg:col-span-5 space-y-3">
+          <div class="text-xs font-extrabold uppercase tracking-[0.22em] brand-accent-text">Institucional</div>
+          <h2 class="font-editorial text-3xl sm:text-4xl font-bold text-white leading-tight">
+            Estratégia jurídica técnica com clareza em cada etapa.
+          </h2>
+        </div>
+        <div class="lg:col-span-7 space-y-4">
+          <p id="sobre-bio-full" class="text-base text-slate-300 leading-relaxed"></p>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
+            <div class="p-4 rounded-2xl bg-white/5 border border-white/10">
+              <div class="font-editorial text-2xl font-bold brand-accent-text">100%</div>
+              <div class="text-xs font-semibold text-slate-300 mt-1">Transparência processual com acesso online</div>
+            </div>
+            <div class="p-4 rounded-2xl bg-white/5 border border-white/10">
+              <div class="font-editorial text-2xl font-bold brand-accent-text">Direto</div>
+              <div class="text-xs font-semibold text-slate-300 mt-1">Atendimento sem intermediários pelo WhatsApp</div>
+            </div>
+            <div class="p-4 rounded-2xl bg-white/5 border border-white/10">
+              <div class="font-editorial text-2xl font-bold brand-accent-text">Sigilo</div>
+              <div class="text-xs font-semibold text-slate-300 mt-1">Guarda segura de documentos e peças</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ÁREAS DE ATUAÇÃO (DINÂMICO) -->
+    <section id="areas" class="py-16 sm:py-24 border-b border-white/10">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
+        <div class="max-w-2xl space-y-3">
+          <div class="text-xs font-extrabold uppercase tracking-[0.22em] brand-accent-text">Especialidades</div>
+          <h2 class="font-editorial text-3xl sm:text-4xl font-bold text-white">Áreas de Atuação</h2>
+          <p class="text-sm sm:text-base text-slate-400">
+            Selecione a área relacionada à sua demanda para iniciar uma análise inicial diretamente com o escritório.
+          </p>
+        </div>
+
+        <div id="areas-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"></div>
+      </div>
+    </section>
+
+    <!-- METODOLOGIA / COMO ATUAMOS -->
+    <section id="atuacao" class="py-16 sm:py-20 border-b border-white/10 bg-[#0A0E17]">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
+        <div class="max-w-2xl space-y-3">
+          <div class="text-xs font-extrabold uppercase tracking-[0.22em] brand-accent-text">Rito de Atendimento</div>
+          <h2 class="font-editorial text-3xl sm:text-4xl font-bold text-white">Como Conduzimos o Seu Caso</h2>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div class="glass-card rounded-3xl p-7 space-y-3">
+            <div class="w-11 h-11 rounded-xl bg-white/5 border brand-accent-border flex items-center justify-center brand-accent-text">
+              <i data-lucide="search" class="w-5 h-5"></i>
+            </div>
+            <div class="text-xs font-extrabold uppercase tracking-widest text-slate-400">Etapa 01</div>
+            <h3 class="font-editorial text-2xl font-bold text-white">Diagnóstico Estratégico</h3>
+            <p class="text-sm text-slate-300 leading-relaxed">
+              Análise criteriosa dos fatos, provas e riscos jurídicos para traçar a tese mais sólida desde o primeiro contato.
+            </p>
+          </div>
+
+          <div class="glass-card rounded-3xl p-7 space-y-3">
+            <div class="w-11 h-11 rounded-xl bg-white/5 border brand-accent-border flex items-center justify-center brand-accent-text">
+              <i data-lucide="file-check-2" class="w-5 h-5"></i>
+            </div>
+            <div class="text-xs font-extrabold uppercase tracking-widest text-slate-400">Etapa 02</div>
+            <h3 class="font-editorial text-2xl font-bold text-white">Atuação Técnica Firme</h3>
+            <p class="text-sm text-slate-300 leading-relaxed">
+              Protocolo ágil de medidas judiciais e extrajudiciais, monitoramento constante de prazos e publicações oficiais.
+            </p>
+          </div>
+
+          <div class="glass-card rounded-3xl p-7 space-y-3">
+            <div class="w-11 h-11 rounded-xl bg-white/5 border brand-accent-border flex items-center justify-center brand-accent-text">
+              <i data-lucide="smartphone" class="w-5 h-5"></i>
+            </div>
+            <div class="text-xs font-extrabold uppercase tracking-widest text-slate-400">Etapa 03</div>
+            <h3 class="font-editorial text-2xl font-bold text-white">Acompanhamento Transparente</h3>
+            <p class="text-sm text-slate-300 leading-relaxed">
+              Você acompanha movimentações, documentos e explicações claras de cada fase diretamente pelo Portal do Cliente.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CONTATO & RODAPÉ -->
+    <section id="contato" class="py-16 sm:py-20">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="glass-card rounded-3xl p-8 sm:p-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+          <div class="lg:col-span-7 space-y-4">
+            <div class="text-xs font-extrabold uppercase tracking-[0.22em] brand-accent-text">Canais Oficiais</div>
+            <h2 class="font-editorial text-3xl sm:text-4xl font-bold text-white">Precisa de orientação jurídica?</h2>
+            <p class="text-sm sm:text-base text-slate-300 max-w-xl">
+              Entre em contato diretamente com nossa equipe para agendar seu atendimento ou acesse o Portal do Cliente caso já possua processo em andamento.
+            </p>
+            <div id="contato-details" class="space-y-2.5 pt-2 text-sm text-slate-200"></div>
+          </div>
+
+          <div class="lg:col-span-5 flex flex-col gap-3">
+            <a id="footer-wa-btn" href="#" target="_blank" rel="noopener noreferrer" class="brand-btn-primary w-full py-4 px-5 rounded-xl font-extrabold text-sm text-center inline-flex items-center justify-center gap-2">
+              <i data-lucide="message-circle" class="w-5 h-5"></i> Conversar no WhatsApp Agora
+            </a>
+            <button type="button" onclick="openConsultModal()" class="brand-btn-outline w-full py-3.5 px-5 rounded-xl font-bold text-sm text-white inline-flex items-center justify-center gap-2">
+              <i data-lucide="mail" class="w-4 h-4 brand-accent-text"></i> Enviar Mensagem Estruturada
+            </button>
+            <a id="footer-portal-btn" href="./sistema.html" class="w-full py-3.5 px-5 rounded-xl border border-white/15 bg-white/5 hover:bg-white/10 font-bold text-sm text-slate-200 inline-flex items-center justify-center gap-2 transition">
+              <i data-lucide="lock" class="w-4 h-4 brand-accent-text"></i> Acessar Área do Cliente
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <footer class="mt-auto border-t border-white/10 py-8 px-4 text-center text-xs text-slate-500">
+      <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
+        <span id="footer-copyright"></span>
+        <span>Ambiente Digital Jurídico • Tecnologia RPMASTER</span>
+      </div>
+    </footer>
+
+    <!-- Botão Flutuante WhatsApp -->
+    <a id="floating-wa-btn" href="#" target="_blank" rel="noopener noreferrer" aria-label="Falar no WhatsApp"
+      class="fixed bottom-5 right-5 z-40 w-14 h-14 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white shadow-2xl flex items-center justify-center transition transform hover:scale-105">
+      <i data-lucide="message-circle" class="w-7 h-7"></i>
+    </a>
+  </div>
+
+  <!-- MODAL DE ATENDIMENTO RÁPIDO -->
+  <div id="consult-modal" class="fixed inset-0 z-50 hidden bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="glass-card rounded-3xl max-w-lg w-full p-6 sm:p-7 space-y-5">
+      <div class="flex items-center justify-between pb-3 border-b border-white/10">
+        <div>
+          <div class="text-xs font-bold uppercase tracking-widest brand-accent-text">Atendimento Direto</div>
+          <h3 class="font-editorial text-2xl font-bold text-white">Resumo da Sua Demanda</h3>
+        </div>
+        <button type="button" onclick="closeConsultModal()" class="p-2 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <form onsubmit="submitConsultModal(event)" class="space-y-4 text-sm">
+        <div>
+          <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Seu Nome *</label>
+          <input id="cm-nome" required placeholder="Nome completo" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-white">
+        </div>
+        <div>
+          <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Área / Assunto</label>
+          <select id="cm-area" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-white"></select>
+        </div>
+        <div>
+          <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Resumo Breve *</label>
+          <textarea id="cm-msg" required rows="3" placeholder="Conte brevemente como podemos ajudar..." class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-white"></textarea>
+        </div>
+        <div class="flex justify-end gap-2 pt-2">
+          <button type="button" onclick="closeConsultModal()" class="px-4 py-2.5 rounded-xl border border-slate-700 text-slate-300 text-xs font-bold">Cancelar</button>
+          <button type="submit" class="brand-btn-primary px-5 py-2.5 rounded-xl text-xs font-extrabold inline-flex items-center gap-1.5">
+            <i data-lucide="send" class="w-3.5 h-3.5"></i> Enviar no WhatsApp
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const SUPABASE_URL = 'https://zlnaushxdvuznlwmongk.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_U_vT8rFuKXlwF4_yUlfaUQ_WcXYtcbx';
+    const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    let ACTIVE_SITE = null;
+
+    function esc(str) {
+      return String(str == null ? '' : str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function safeHex(val, fallback) {
+      return /^#[0-9A-Fa-f]{6}$/.test(String(val || '').trim()) ? String(val).trim() : fallback;
+    }
+
+    function safeHttpsUrl(val) {
+      const s = String(val || '').trim();
+      return /^https:\/\//i.test(s) ? s : '';
+    }
+
+    function safeDigits(val) {
+      return String(val || '').replace(/\D/g, '');
+    }
+
+    function formatPhoneDisplay(digits) {
+      const d = safeDigits(digits);
+      if (d.length === 13 && d.startsWith('55')) {
+        return `(${d.slice(2, 4)}) ${d.slice(4, 9)}-${d.slice(9)}`;
+      }
+      if (d.length === 12 && d.startsWith('55')) {
+        return `(${d.slice(2, 4)}) ${d.slice(4, 8)}-${d.slice(8)}`;
+      }
+      if (d.length === 11) return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
+      return d || 'Atendimento Online';
+    }
+
+    function buildWhatsAppUrl(digits, message) {
+      const d = safeDigits(digits);
+      if (!d) return '#contato';
+      return 'https://wa.me/' + d + '?text=' + encodeURIComponent(message);
+    }
+
+    function initialsFrom(name) {
+      const parts = String(name || 'AJ').trim().split(/\s+/).filter(Boolean);
+      if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase().replace(/[^A-Z0-9]/g, '') || 'AJ';
+      return String(name || 'AJ').slice(0, 2).toUpperCase().replace(/[^A-Z0-9]/g, '') || 'AJ';
+    }
+
+    function buildMonogramSvg(name, p1, p2) {
+      const ini = esc(initialsFrom(name));
+      const c1 = safeHex(p1, '#0F294A');
+      const c2 = safeHex(p2, '#D4AF37');
+      return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80" class="w-full h-full">
+        <rect width="80" height="80" rx="18" fill="${c1}"/>
+        <rect x="5" y="5" width="70" height="70" rx="14" fill="none" stroke="${c2}" stroke-width="2.5"/>
+        <text x="40" y="49" text-anchor="middle" font-family="Cormorant Garamond, Georgia, serif" font-size="30" font-weight="700" fill="${c2}">${ini}</text>
+      </svg>`;
+    }
+
+    function renderEmblemInto(containerEl, site) {
+      if (!containerEl) return;
+      const safeUrl = safeHttpsUrl(site.logo_url);
+      const fallbackSvg = buildMonogramSvg(site.nome_escritorio, site.cor_primaria, site.cor_destaque);
+      if (safeUrl) {
+        const img = document.createElement('img');
+        img.src = safeUrl;
+        img.alt = site.nome_escritorio || 'Logo do Escritório';
+        img.className = 'w-full h-full object-contain rounded-lg';
+        img.onerror = () => { containerEl.innerHTML = fallbackSvg; };
+        containerEl.innerHTML = '';
+        containerEl.appendChild(img);
+      } else {
+        containerEl.innerHTML = fallbackSvg;
+      }
+    }
+
+    function pickAreaIcon(areaName) {
+      const s = String(areaName || '').toLowerCase();
+      if (s.includes('crimin') || s.includes('penal')) return 'shield';
+      if (s.includes('consum')) return 'shopping-bag';
+      if (s.includes('trabalh')) return 'briefcase';
+      if (s.includes('famíl') || s.includes('famil') || s.includes('sucess')) return 'heart-handshake';
+      if (s.includes('previd')) return 'landmark';
+      if (s.includes('empres') || s.includes('tribut')) return 'building-2';
+      if (s.includes('imobil') || s.includes('contrat')) return 'file-signature';
+      if (s.includes('saúde') || s.includes('saude')) return 'heart-pulse';
+      return 'scale';
+    }
+
+    function showGuard(reason, nomeEsc) {
+      document.getElementById('state-loading').classList.add('hidden');
+      document.getElementById('site-root').classList.add('hidden');
+      document.getElementById('state-guard').classList.remove('hidden');
+
+      const title = document.getElementById('guard-title');
+      const desc = document.getElementById('guard-desc');
+      if (reason === 'suspended' || reason === 'module_disabled') {
+        document.title = 'Site Temporariamente Indisponível';
+        title.textContent = 'Site temporariamente indisponível';
+        desc.textContent = nomeEsc
+          ? `A página institucional de ${nomeEsc} encontra-se temporariamente indisponível no momento.`
+          : 'Esta página institucional encontra-se temporariamente indisponível no momento.';
+      } else {
+        document.title = 'Escritório não localizado • RPMASTER';
+        title.textContent = 'Escritório não localizado';
+        desc.textContent = 'O endereço solicitado não corresponde a nenhum escritório ativo. Confira o link informado pelo seu advogado(a).';
+      }
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function renderSite(site) {
+      ACTIVE_SITE = site;
+      const p1 = safeHex(site.cor_primaria, '#0F294A');
+      const p2 = safeHex(site.cor_destaque, '#D4AF37');
+      document.documentElement.style.setProperty('--brand-primary', p1);
+      document.documentElement.style.setProperty('--brand-accent', p2);
+
+      const nomeEsc = String(site.nome_escritorio || 'Escritório Jurídico').trim();
+      const subEsc = String(site.subtitulo || 'Advocacia & Consultoria Jurídica').trim();
+      const advFull = String(site.nome_advogado || nomeEsc).trim();
+      const oab = String(site.oab_registro || '').trim();
+      const ufs = String(site.ufs_djen || '').trim();
+      const waDigits = safeDigits(site.whatsapp_oficial);
+      const waDisplay = formatPhoneDisplay(waDigits);
+      const portalUrl = './sistema.html?escritorio=' + encodeURIComponent(site.slug);
+      const areas = Array.isArray(site.areas_atuacao) && site.areas_atuacao.length > 0
+        ? site.areas_atuacao.map(a => String(a || '').trim()).filter(Boolean)
+        : ['Direito Cível & Contratos', 'Direito do Consumidor', 'Consultoria Jurídica Preventiva'];
+
+      const bio = String(site.bio_institucional || '').trim()
+        || `Atuação jurídica dedicada e personalizada em ${areas.slice(0, 3).join(', ')}, unindo rigor técnico, atendimento direto e acompanhamento transparente.`;
+
+      document.title = `${nomeEsc} | ${subEsc}${oab ? ' (' + oab + ')' : ''}`;
+      document.getElementById('topbar-meta').textContent = `${nomeEsc}${oab ? ' • ' + oab : ''}${ufs ? ' • Atuação ' + ufs : ''}`;
+      document.getElementById('nav-brand-name').textContent = nomeEsc;
+      document.getElementById('nav-brand-sub').textContent = oab ? `${subEsc} • ${oab}` : subEsc;
+      document.getElementById('nav-wa-label').textContent = waDigits ? waDisplay : 'WhatsApp';
+
+      renderEmblemInto(document.getElementById('nav-logo-wrap'), site);
+      renderEmblemInto(document.getElementById('hero-card-emblem'), site);
+
+      document.getElementById('hero-oab-pill').textContent = oab ? `${oab}${ufs ? ' • ' + ufs : ''}` : 'Advocacia Especializada';
+      document.getElementById('hero-title').textContent = nomeEsc;
+      document.getElementById('hero-subtitle').textContent = subEsc;
+      document.getElementById('hero-bio').textContent = bio;
+      document.getElementById('sobre-bio-full').textContent = bio;
+      document.getElementById('hero-adv-name').textContent = advFull;
+      document.getElementById('hero-oab-line').textContent = oab || 'Registro Profissional Ativo';
+
+      const defaultWaMsg = `Olá! Visitei o site oficial de ${nomeEsc} e gostaria de solicitar uma orientação jurídica.`;
+      const defaultWaHref = buildWhatsAppUrl(waDigits, defaultWaMsg);
+
+      ['nav-wa-btn', 'mob-wa-btn', 'hero-wa-btn', 'footer-wa-btn', 'floating-wa-btn'].forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        if (waDigits) {
+          el.href = defaultWaHref;
+          el.classList.remove('hidden');
+        } else {
+          el.classList.add('hidden');
+        }
+      });
+
+      ['nav-portal-btn', 'mob-portal-btn', 'hero-portal-btn', 'footer-portal-btn'].forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.href = portalUrl;
+        el.classList.toggle('hidden', site.portal_enabled === false);
+      });
+
+      // Resumo de contato no card Hero + Seção Contato
+      const contactRows = [];
+      if (waDigits) contactRows.push(`<div class="flex items-center gap-2.5"><i data-lucide="phone" class="w-4 h-4 brand-accent-text shrink-0"></i><span><strong>WhatsApp:</strong> ${esc(waDisplay)}</span></div>`);
+      if (site.email_oficial) contactRows.push(`<div class="flex items-center gap-2.5"><i data-lucide="mail" class="w-4 h-4 brand-accent-text shrink-0"></i><span><strong>E-mail:</strong> ${esc(site.email_oficial)}</span></div>`);
+      if (site.endereco_escritorio) contactRows.push(`<div class="flex items-center gap-2.5"><i data-lucide="map-pin" class="w-4 h-4 brand-accent-text shrink-0"></i><span><strong>Endereço:</strong> ${esc(site.endereco_escritorio)}</span></div>`);
+      if (oab) contactRows.push(`<div class="flex items-center gap-2.5"><i data-lucide="award" class="w-4 h-4 brand-accent-text shrink-0"></i><span><strong>Registro:</strong> ${esc(oab)}</span></div>`);
+      const contactHtml = contactRows.join('');
+      document.getElementById('hero-contact-summary').innerHTML = contactHtml;
+      document.getElementById('contato-details').innerHTML = contactHtml;
+
+      // Grid Dinâmico de Áreas de Atuação
+      document.getElementById('areas-grid').innerHTML = areas.map(area => {
+        const icon = pickAreaIcon(area);
+        const areaHref = buildWhatsAppUrl(waDigits, `Olá! Gostaria de falar com ${nomeEsc} sobre uma demanda em: ${area}.`);
+        return `
+          <article class="glass-card rounded-3xl p-6 flex flex-col justify-between gap-5">
+            <div class="space-y-3">
+              <div class="w-11 h-11 rounded-xl bg-white/5 border brand-accent-border flex items-center justify-center brand-accent-text">
+                <i data-lucide="${icon}" class="w-5 h-5"></i>
+              </div>
+              <h3 class="font-editorial text-2xl font-bold text-white leading-snug">${esc(area)}</h3>
+              <p class="text-xs sm:text-sm text-slate-400 leading-relaxed">
+                Assessoria consultiva e atuação contenciosa dedicada em ${esc(area)}, com estratégia sob medida para o seu caso.
+              </p>
+            </div>
+            ${waDigits ? `
+              <a href="${areaHref}" target="_blank" rel="noopener noreferrer"
+                class="inline-flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider brand-accent-text hover:underline">
+                Consultar sobre esta área <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+              </a>
+            ` : ''}
+          </article>
+        `;
+      }).join('');
+
+      // Modal Select de Áreas
+      document.getElementById('cm-area').innerHTML = areas.map(a => `<option value="${esc(a)}">${esc(a)}</option>`).join('') + '<option value="Outro assunto jurídico">Outro assunto jurídico</option>';
+
+      document.getElementById('footer-copyright').textContent = `© ${new Date().getFullYear()} ${nomeEsc}${oab ? ' • ' + oab : ''} — Todos os direitos reservados.`;
+
+      document.getElementById('state-loading').classList.add('hidden');
+      document.getElementById('state-guard').classList.add('hidden');
+      document.getElementById('site-root').classList.remove('hidden');
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function openConsultModal() {
+      document.getElementById('consult-modal').classList.remove('hidden');
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function closeConsultModal() {
+      document.getElementById('consult-modal').classList.add('hidden');
+    }
+
+    function submitConsultModal(e) {
+      e.preventDefault();
+      if (!ACTIVE_SITE) return;
+      const nome = document.getElementById('cm-nome').value.trim();
+      const area = document.getElementById('cm-area').value.trim();
+      const msg = document.getElementById('cm-msg').value.trim();
+      const waDigits = safeDigits(ACTIVE_SITE.whatsapp_oficial);
+      if (!waDigits) return closeConsultModal();
+      const fullText = `Olá! Meu nome é ${nome}.\nÁrea de interesse: ${area}\nResumo: ${msg}`;
+      window.open(buildWhatsAppUrl(waDigits, fullText), '_blank', 'noopener,noreferrer');
+      closeConsultModal();
+    }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      const toggle = document.getElementById('mobile-menu-toggle');
+      const drawer = document.getElementById('mobile-menu-drawer');
+      if (toggle && drawer) {
+        toggle.addEventListener('click', () => drawer.classList.toggle('hidden'));
+        drawer.querySelectorAll('.mobile-link').forEach(a => a.addEventListener('click', () => drawer.classList.add('hidden')));
+      }
+
+      const params = new URLSearchParams(window.location.search);
+      const slug = (params.get('escritorio') || '').trim().toLowerCase().replace(/[^a-z0-9-]/g, '');
+      if (!slug) {
+        showGuard('not_found', '');
+        return;
+      }
+
+      try {
+        const { data, error } = await sb.rpc('legal_get_public_site', { p_slug: slug });
+        if (error || !data || !data.ok || !data.site) {
+          showGuard((data && data.reason) || 'not_found', (data && data.nome_escritorio) || '');
+          return;
+        }
+        renderSite(data.site);
+      } catch (_) {
+        showGuard('not_found', '');
+      }
+    });
+  </script>
+</body>
+</html>

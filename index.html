@@ -294,7 +294,9 @@
       { key: 'pecas', label: 'Banco de Peças & Minutas', desc: 'Upload e preenchimento automático de petições' },
       { key: 'kanban', label: 'Painel de Tarefas (Kanban)', desc: 'Quadro visual de prazos e checklists' },
       { key: 'financeiro', label: 'Financeiro & Honorários', desc: 'Fluxo de caixa e carnês de parcelamento' },
-      { key: 'caixa_entrada', label: 'Dúvidas / Caixa de Entrada', desc: 'Perguntas enviadas pelos clientes no portal' }
+      { key: 'caixa_entrada', label: 'Dúvidas / Caixa de Entrada', desc: 'Perguntas enviadas pelos clientes no portal' },
+      { key: 'mni_realtime', label: 'Tempo Real MNI (Eproc/PJe)', desc: 'Conexão direta com tribunais e cofre MNI' },
+      { key: 'site_institucional', label: 'Site Institucional White-Label', desc: 'Página vitrine pública com marca, OAB, áreas e WhatsApp' }
     ];
 
     const COLOR_PRESETS = [
@@ -387,6 +389,40 @@
         url.searchParams.set('escritorio', slug);
       }
       return url.toString();
+    }
+
+    function getSiteBaseUrl() {
+      if (window.location.hostname.includes('minhaempresacrm.github.io')) {
+        return 'https://minhaempresacrm.github.io/rpmaster/site.html';
+      }
+      return new URL('./site.html', window.location.href).toString().split('?')[0];
+    }
+
+    function buildSiteUrl(slug) {
+      const url = new URL(getSiteBaseUrl());
+      if (slug) {
+        url.searchParams.set('escritorio', slug);
+      }
+      return url.toString();
+    }
+
+    const PLAN_PRESETS = {
+      'Solo / Start': { mens: '147.00', setup: '297.00', disabled: ['mni_realtime', 'site_institucional'] },
+      'Boutique Pro': { mens: '197.00', setup: '497.00', disabled: [] },
+      'VIP / Full':   { mens: '347.00', setup: '997.00', disabled: [] }
+    };
+
+    function applyPlanPreset(plano) {
+      const preset = PLAN_PRESETS[plano];
+      if (!preset) return;
+      const mEl = document.getElementById('cw-mens');
+      const sEl = document.getElementById('cw-setup');
+      if (mEl) mEl.value = preset.mens;
+      if (sEl) sEl.value = preset.setup;
+      document.querySelectorAll('[data-cw-mod]').forEach(cb => {
+        const key = cb.getAttribute('data-cw-mod');
+        cb.checked = !preset.disabled.includes(key);
+      });
     }
 
     function computeInitials(str) {
@@ -615,6 +651,10 @@
         const bloqMotivo = cfg.bloqueio_motivo || '';
         const aviso = cfg.aviso_rpmaster || '';
         const pubUrl = buildClientUrl(e.slug);
+        const siteUrl = buildSiteUrl(e.slug);
+        const modsMap = (cfg && typeof cfg.modulos === 'object' && cfg.modulos) ? cfg.modulos : {};
+        const siteEnabled = ('site_institucional' in modsMap) ? Boolean(modsMap.site_institucional) : true;
+        const mniEnabled = ('mni_realtime' in modsMap) ? Boolean(modsMap.mni_realtime) : true;
         const modCount = getEnabledModulesCount(e);
         const areas = Array.isArray(e.areas_atuacao) ? e.areas_atuacao : [];
         const c1 = e.cor_primaria || '#4F46E5';
@@ -645,6 +685,12 @@
                         <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-500/15 text-cyan-300 border border-indigo-400/30">
                           ${modCount}/${SYSTEM_MODULES.length} áreas
                         </span>
+                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${mniEnabled ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30' : 'bg-slate-800 text-slate-500 border border-slate-700'}">
+                          ${mniEnabled ? 'MNI ON' : 'MNI OFF'}
+                        </span>
+                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${siteEnabled ? 'bg-cyan-500/15 text-cyan-300 border border-cyan-400/30' : 'bg-slate-800 text-slate-500 border border-slate-700'}">
+                          ${siteEnabled ? 'Site ON' : 'Site OFF'}
+                        </span>
                       </div>
                       <h3 class="text-lg font-black text-white mt-1">${esc(e.nome_escritorio)}</h3>
                       <div class="text-xs text-slate-400">${esc(e.nome_advogado || e.nome_escritorio)} • <strong class="text-slate-200">${esc(e.oab_registro || 'OAB')}</strong></div>
@@ -671,10 +717,17 @@
                 <!-- Link e Credenciais -->
                 <div class="p-3.5 rounded-2xl bg-slate-950/70 border border-slate-800 space-y-2 text-xs">
                   <div class="flex flex-wrap items-center justify-between gap-2">
-                    <span class="text-slate-400">URL Exclusiva:</span>
+                    <span class="text-slate-400">Sistema / Portal:</span>
                     <div class="flex items-center gap-1.5">
-                      <a href="${esc(pubUrl)}" target="_blank" class="font-mono font-bold text-cyan-300 underline truncate max-w-[210px]">?escritorio=${esc(e.slug)}</a>
-                      <button type="button" onclick="copyText('${esc(pubUrl)}', 'URL copiada!')" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-[10px] font-bold text-slate-200 cursor-pointer">Copiar</button>
+                      <a href="${esc(pubUrl)}" target="_blank" class="font-mono font-bold text-cyan-300 underline truncate max-w-[210px]">sistema.html?escritorio=${esc(e.slug)}</a>
+                      <button type="button" onclick="copyText('${esc(pubUrl)}', 'URL do Sistema copiada!')" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-[10px] font-bold text-slate-200 cursor-pointer">Copiar</button>
+                    </div>
+                  </div>
+                  <div class="flex flex-wrap items-center justify-between gap-2 pt-1.5 border-t border-slate-800/80">
+                    <span class="text-slate-400">Site Vitrine:</span>
+                    <div class="flex items-center gap-1.5">
+                      <a href="${esc(siteUrl)}" target="_blank" class="font-mono font-bold ${siteEnabled ? 'text-emerald-300' : 'text-slate-500 line-through'} underline truncate max-w-[210px]">site.html?escritorio=${esc(e.slug)}</a>
+                      <button type="button" onclick="copyText('${esc(siteUrl)}', 'URL do Site Vitrine copiada!')" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-[10px] font-bold text-slate-200 cursor-pointer">Copiar</button>
                     </div>
                   </div>
                   <div class="flex flex-wrap items-center justify-between gap-2 pt-1.5 border-t border-slate-800/80">
@@ -724,6 +777,10 @@
                   class="px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-extrabold flex items-center gap-1 cursor-pointer">
                   <i data-lucide="external-link" class="w-3.5 h-3.5"></i> Acessar Painel
                 </button>
+                <a href="${esc(siteUrl)}" target="_blank" rel="noopener noreferrer"
+                  class="px-3 py-1.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-400/40 text-emerald-200 text-xs font-extrabold flex items-center gap-1">
+                  <i data-lucide="globe" class="w-3.5 h-3.5"></i> Site Vitrine
+                </a>
                 <button type="button" onclick="openModulesAreasModal('${e.id}')"
                   class="px-3 py-1.5 rounded-xl bg-cyan-500/15 hover:bg-cyan-500/25 border border-cyan-400/40 text-cyan-200 text-xs font-extrabold flex items-center gap-1 cursor-pointer">
                   <i data-lucide="sliders-horizontal" class="w-3.5 h-3.5"></i> Áreas & Módulos
@@ -1088,7 +1145,7 @@
             <div class="grid grid-cols-3 gap-2 sm:col-span-2">
               <div>
                 <label class="font-bold text-slate-300 block mb-1">Plano</label>
-                <select id="cw-plano" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white font-bold">
+                <select id="cw-plano" onchange="applyPlanPreset(this.value)" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white font-bold">
                   <option value="Boutique Pro">Boutique Pro</option>
                   <option value="Solo / Start">Solo / Start</option>
                   <option value="VIP / Full">VIP / Full</option>
@@ -1102,6 +1159,22 @@
                 <label class="font-bold text-slate-300 block mb-1">Setup (R$)</label>
                 <input id="cw-setup" type="number" step="0.01" value="497.00" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white font-mono">
               </div>
+            </div>
+            <div>
+              <label class="font-bold text-slate-300 block mb-1">Tratamento (Site Vitrine)</label>
+              <input id="cw-tratamento" value="Dr(a)." placeholder="Dr. / Dra. / Escritório" class="w-full px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white">
+            </div>
+            <div>
+              <label class="font-bold text-slate-300 block mb-1">E-mail Oficial (Opcional)</label>
+              <input id="cw-email" type="email" placeholder="contato@escritorio.com.br" class="w-full px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white">
+            </div>
+            <div class="sm:col-span-2">
+              <label class="font-bold text-slate-300 block mb-1">Endereço / Atendimento (Opcional)</label>
+              <input id="cw-endereco" placeholder="Atendimento Presencial e Online em todo o Brasil" class="w-full px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white">
+            </div>
+            <div class="sm:col-span-2">
+              <label class="font-bold text-slate-300 block mb-1">Bio Institucional do Site Vitrine (Opcional)</label>
+              <textarea id="cw-bio" rows="2" maxlength="1500" placeholder="Apresentação breve do escritório para o Site Institucional..." class="w-full px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white"></textarea>
             </div>
           </div>
 
@@ -1145,6 +1218,10 @@
         cor_primaria: document.getElementById('cw-cor1-hex').value.trim(),
         cor_destaque: document.getElementById('cw-cor2-hex').value.trim(),
         logo_url: document.getElementById('cw-logo').value.trim(),
+        tratamento: document.getElementById('cw-tratamento').value.trim(),
+        email_oficial: document.getElementById('cw-email').value.trim(),
+        endereco_escritorio: document.getElementById('cw-endereco').value.trim(),
+        bio_institucional: document.getElementById('cw-bio').value.trim(),
         plano: document.getElementById('cw-plano').value,
         valor_mensalidade: document.getElementById('cw-mens').value,
         valor_setup: document.getElementById('cw-setup').value,
@@ -1230,6 +1307,25 @@
               <label class="font-bold text-slate-300 block mb-1">Logo URL (Opcional)</label>
               <input id="ed-logo" value="${esc(e.logo_url || '')}" class="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-white font-mono">
             </div>
+            <div class="sm:col-span-2 pt-2 border-t border-slate-800">
+              <div class="text-[11px] font-extrabold uppercase tracking-wider text-cyan-300 mb-2">Conteúdo do Site Institucional (Vitrine)</div>
+            </div>
+            <div>
+              <label class="font-bold text-slate-300 block mb-1">Tratamento (Dr. / Dra. / Escritório)</label>
+              <input id="ed-tratamento" value="${esc(e.tratamento || 'Dr(a).')}" class="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-white">
+            </div>
+            <div>
+              <label class="font-bold text-slate-300 block mb-1">E-mail Oficial</label>
+              <input id="ed-email" type="email" value="${esc(e.email_oficial || '')}" placeholder="contato@escritorio.com.br" class="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-white">
+            </div>
+            <div class="sm:col-span-2">
+              <label class="font-bold text-slate-300 block mb-1">Endereço / Região de Atendimento</label>
+              <input id="ed-endereco" value="${esc(e.endereco_escritorio || '')}" placeholder="Atendimento Presencial & Digital" class="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-white">
+            </div>
+            <div class="sm:col-span-2">
+              <label class="font-bold text-slate-300 block mb-1">Bio / Apresentação Institucional</label>
+              <textarea id="ed-bio" rows="3" maxlength="1500" placeholder="Texto exibido no Site Vitrine do escritório..." class="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-white">${esc(e.bio_institucional || '')}</textarea>
+            </div>
           </div>
           <div class="flex justify-end gap-2 pt-3 border-t border-slate-800">
             <button type="button" onclick="closeModal()" class="px-4 py-2 rounded-xl border border-slate-700 text-xs font-bold text-slate-300 cursor-pointer">Cancelar</button>
@@ -1255,7 +1351,11 @@
         cor_destaque: document.getElementById('ed-c2').value.trim(),
         admin_username: document.getElementById('ed-user').value.trim(),
         new_password: document.getElementById('ed-pass').value.trim(),
-        logo_url: document.getElementById('ed-logo').value.trim()
+        logo_url: document.getElementById('ed-logo').value.trim(),
+        tratamento: document.getElementById('ed-tratamento').value.trim(),
+        email_oficial: document.getElementById('ed-email').value.trim(),
+        endereco_escritorio: document.getElementById('ed-endereco').value.trim(),
+        bio_institucional: document.getElementById('ed-bio').value.trim()
       });
       if (!res) return;
       closeModal();
